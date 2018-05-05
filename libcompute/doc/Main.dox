@@ -1,0 +1,20 @@
+/** @mainpage 
+
+@section intro Introduction
+
+libcompute is a library developed with the aim of providing mechanisms for
+automating the computation of "embarassingly parallel" problems on various
+computational platforms.  It started as a simple wrapper for performing
+GPGPU operations using the OpenGL Shader Language, but quickly evolved to
+allowing parallel computations using backends such as Lua, C++, or CUDA.
+
+Unlike OpenCL, which has the aim of "write once, run anywhere", libcompute 
+is more focused on allowing end-users to fully customize code written for
+each specific backend.  Though this means that algorithms are not automatically
+mapped to a specific compute backend, the tradeoff is that each computational
+engine can have code written for it that specifically targets its strengths.
+
+libcompute is also easily extensible though the creation of new computational
+engines.
+
+*/

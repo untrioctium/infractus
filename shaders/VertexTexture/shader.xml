@@ -1,0 +1,13 @@
+<shader>
+	<files>
+		<file>
+			<name>VertexTexture.frag</name>
+			<type>fragment</type>
+		</file>
+		<file>
+			<name>VertexTexture.vert</name>
+			<type>vertex</type>
+		</file>
+	</files>
+</shader>
+		

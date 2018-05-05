@@ -1,0 +1,23 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>transform.frag</file>
+		</engine>
+	</engines>
+	<input>
+		<type>void</type>
+		
+		<parameters>
+			<parameter name="X_MIN" type="float" />
+			<parameter name="X_MAX" type="float" />
+			<parameter name="Y_MIN" type="float" />
+			<parameter name="Y_MAX" type="float" />
+			<parameter name="blend" type="float" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

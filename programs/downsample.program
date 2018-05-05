@@ -1,0 +1,22 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>downsample.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="samples" type="int" />
+			<parameter name="inOff" type="vec2" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

@@ -1,0 +1,15 @@
+<escapes>
+	<escape name="henon" radius="10" max="1000">
+		<x>1 - [a] * [x] * [x] + [y]</x>
+		<y>[b] * [x]</y>
+		<parameters>
+			<parameter name="a" min=".2" max=".2" />
+			<parameter name="b" min="1.01" max="1.01" />
+		</parameters>
+	</escape>
+	<escape name="mandelbrot" radius="2" max="500">
+		<x>[x] * [x] - [y] * [y] + [cx]</x>
+		<y>2 * [x] * [y] + [cy]</y>
+		<parameters />
+	</escape>
+</escapes>

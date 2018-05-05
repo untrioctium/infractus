@@ -1,0 +1,30 @@
+<program>
+	<information>
+		<type>plane</type>
+	</information>
+	
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>newton.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+		
+		<parameters>
+			<parameter name="function" type="vec4" size="8" />
+			<parameter name="functionSize" type="int" />
+			<parameter name="maxIterations" type="int" />
+			<parameter name="requiredPrecision" type="float" />
+			<parameter name="t" type="float" />
+			<parameter name="coeff" type="vec2" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

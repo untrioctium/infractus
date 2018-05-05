@@ -1,0 +1,20 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>invert.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

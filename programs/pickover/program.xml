@@ -1,0 +1,9 @@
+<program>
+	<name>Pickover</name>
+	<author>Alex Riley</author>
+	<email>a.s.riley@gmail.com</email>
+	<description>A simulator for Pickover attractors.</description>
+	<file>pickover.lua</file>
+	<loader>LuaProgramLoader</loader>
+	<attributes />
+</program>

@@ -1,0 +1,689 @@
+<variations>
+	<variation name="linear">
+		<code>
+			result += weight * p;
+		</code>
+	</variation>
+	<variation name="sinusoidal">
+		<code>
+			result += weight * sin(p);
+		</code>
+	</variation>
+	<variation name="spherical">
+		<code>
+			result += weight/(rSq + EPS) * p;
+		</code>
+	</variation>
+	<variation name="swirl">
+		<code>
+			float sinRsq = sin(rSq);
+			float cosRsq = cos(rSq);
+			result += weight * vec2( sinRsq * p.x - cosRsq * p.y, cosRsq * p.x + sinRsq * p.y );
+		</code>
+	</variation>
+	<variation name="horseshoe">
+		<code>
+			result += weight * 1/(r + EPS) * vec2( (p.x - p.y) * (p.x + p.y), 2 * p.x * p.y );
+		</code>
+	</variation>
+	<variation name="polar">
+		<code>
+			result += weight * vec2( a/PI, r - 1 );
+		</code>
+	</variation>
+	<variation name="handkerchief">
+		<code>
+			result += weight * r * vec2( sin(a + r), cos(a - r) );
+		</code>
+	</variation>
+	<variation name="heart">
+		<code>
+			result += weight * r * vec2( sin( a * r ), -cos( a * r ) );
+		</code>
+	</variation>
+	<variation name="disc">
+		<code>
+			result += weight * a * vec2( sin(PI * r), cos(PI * r) );
+		</code>
+	</variation>
+	<variation name="spiral">
+		<code>
+			result += weight/(r + EPS)  * vec2( cos(a) + sin(r), sin(a) - cos(r) );
+		</code>
+	</variation>
+	<variation name="hyperbolic">
+		<code>
+			result += weight * vec2( sin(a)/(r + EPS), (r + EPS) * cos(a) );
+		</code>
+	</variation>
+	<variation name="diamond">
+		<code>
+			result += weight * vec2( sin(a) * cos(r), cos(a) * sin(r) );
+		</code>
+	</variation>
+	<variation name="ex">
+		<code>
+			float m0 = pow( sin(a + r), 3.0 );
+			float m1 = pow( cos(a - r), 3.0 );
+			result += weight * vec2( m0 + m1, m0 - m1 );
+		</code>
+	</variation>
+	<variation name="julia">
+		<code>
+			float ja = a / 2.0;
+			if( randFloat() > .5 ) ja += PI;
+			result += weight * sqrt( r ) * vec2( cos(ja), sin(ja) );
+		</code>
+	</variation>
+	<variation name="bent">
+		<code>
+			result += weight * vec2( (p.x >= 0.0)? p.x: 2 * p.x, (p.y >= 0.0)? p.x: .5 * p.x );
+		</code>
+	</variation>
+	<variation name="waves">
+		<code>
+			result += weight * vec2( p.x + ab * sin( p.y/(ac * ac + EPS) ), p.y + ae * sin( p.x/(af * af + EPS) ) );
+		</code>
+	</variation>
+	<variation name="fisheye">
+		<code>
+			result += weight * 2.0/(r + 1.0) * p.yx;
+		</code>
+	</variation>
+	<variation name="popcorn">
+		<code>
+			result += weight * vec2( p.x + ac * sin(tan(3 * p.y)), p.y + af * sin(tan(3 * p.x)) );
+		</code>
+	</variation>
+	<variation name="exponential">
+		<code>
+			result += weight * exp( p.x - 1 ) * vec2( cos(PI * p.y), sin(PI * p.y) );
+		</code>
+	</variation>
+	<variation name="power">
+		<code>
+			result += weight * pow(r, sin(a)) * vec2( cos(a), sin(a) );
+		</code>
+	</variation>
+	<variation name="cosine">
+		<code>
+			result += weight * vec2( cos( PI * p.x ) * cosh(p.y), -sin(PI * p.x) * sinh(p.y) );
+		</code>
+	</variation>
+	<variation name="rings">
+		<code>
+			float cSq = ac * ac + EPS;
+			result += weight * (mod( r + cSq, 2 * cSq ) - cSq + r * (1 - cSq)) * vec2( cos(a), sin(a) );
+		</code>
+	</variation>
+	<variation name="fan">
+		<code>
+			float cSq = PI * (ac * ac + EPS);
+			float fa = a + cSq/2 * (mod(a + af, cSq) > cSq/2)? -1: 1;
+			result += weight * r * vec2( cos(fa), sin(fa) );
+		</code>
+	</variation>
+	<variation name="blob">
+		<parameters>
+			<parameter name="blob_low" min=".2" max=".7" integral="false" />
+			<parameter name="blob_high" min=".8" max="1.2" integral="false" />
+			<parameter name="blob_waves" min="2" max="7" integral="true" />
+		</parameters>
+		<code>
+			float br = r * (blob_low + (blob_high - blob_low) * (1/2 + sin(blob_waves * a)/2.0));
+			result += weight * br * vec2( sin(a), cos(a) );
+		</code>
+	</variation>
+	<variation name="pdj">
+		<parameters>
+			<parameter name="pdj_a" min="-3" max="3" integral="false" />
+			<parameter name="pdj_b" min="-3" max="3" integral="false" />
+			<parameter name="pdj_c" min="-3" max="3" integral="false" />
+			<parameter name="pdj_d" min="-3" max="3" integral="false" />
+		</parameters>
+		<code>
+			result += weight * vec2( sin( pdj_a * p.y ) - cos( pdj_b * p.x ), sin( pdj_c * p.x ) - cos( pdj_d * p.y ) );
+		</code>
+	</variation>
+	<variation name="fan2">
+		<parameters>
+			<parameter name="fan2_x" min="-1" max="1" integral="false" />
+			<parameter name="fan2_y" min="-1" max="1" integral="false" />
+		</parameters>
+		<code>
+			float f2x = (fan2_x * fan2_x + EPS) * PI;
+			float ft = a + fan2_y - f2x * floor((t + fan2_y)/f2x);
+			float fa = a + f2x/2 * (ft > f2x/2)? -1: 1;
+			result += weight * r * vec2( sin(fa), cos(fa) );
+		</code>
+	</variation>
+	<variation name="rings2">
+		<parameters>
+			<parameter name="rings2_val" min="0" max="2" integral="false" />
+		</parameters>
+		<code>
+			float r2v = rings2_val * rings2_val + EPS;			
+			float rr = r + -2.0 * r2v * floor((r + r2v)/(2 * r2v)) + r * (1 - r2v);
+			result += weight * rr * vec2( sin(a), cos(a) );
+		</code>
+	</variation>
+	<variation name="eyefish">
+		<code>
+			result += weight * 2/(r + 1) * p;
+		</code>
+	</variation>
+	<variation name="bubble">
+		<code>
+			result += weight/(rSq * .25 + 1) * p;
+		</code>
+	</variation>
+	<variation name="cylinder">
+		<code>
+			result += weight * vec2( sin(p.x), p.y );
+		</code>
+	</variation>
+	<variation name="perspective">
+		<parameters>
+			<parameter name="perspective_angle" min="0" max="1" integral="false" />
+			<parameter name="perspective_dist" min="1" max="3" integral="false" />
+		</parameters>
+		<code>
+			result += weight * perspective_dist * cos(perspective_angle * PI/2)/(perspective_dist * p.x * sin(perspective_angle * PI/2)) * p;
+		</code>
+	</variation>
+	<variation name="julian">
+		<parameters>
+			<parameter name="julian_power" min="2" max="7" integral="true" />
+			<parameter name="julian_dist" min="1" max="1" integral="false" />
+		</parameters>
+		<code>
+			float jt = (t + 2 * PI * fract( abs(julian_power) * randFloat() ))/julian_power;
+			result += weight * pow(r, julian_dist/julian_power) * vec2( cos(jt), sin(jt) );
+		</code>
+	</variation>
+	<variation name="juliascope">
+		<parameters>
+			<parameter name="juliascope_power" min="2" max="7" integral="true" />
+			<parameter name="juliascope_dist" min="1" max="1" integral="false" />
+		</parameters>
+		<code>
+			float jt = (((randFloat() > .5)? -1: 1) * t + 2 * PI * fract( abs(juliascope_power) * randFloat() ))/juliascope_power;
+			result += weight * pow(r, juliascope_dist/juliascope_power) * vec2( cos(jt), sin(jt) );	
+		</code>
+	</variation>
+	<variation name="ngon">
+		<parameters>
+			<parameter name="ngon_sides" min="3" max="13" integral="true" />
+			<parameter name="ngon_power" min="1" max="4" integral="false" />
+			<parameter name="ngon_circle" min="0" max="3" integral="false" />
+			<parameter name="ngon_corners" min="0" max="6" integral="false" />
+		</parameters>
+		<code>
+			float r_factor = pow( rSq, ngon_power/2.0 );
+			float b = 2 * PI/ngon_sides;
+			
+			float phi = mod(t, b);
+			if( phi > b/2 )
+				phi -= b;
+				
+			result += weight * (ngon_corners * (1.0/(cos(phi) + EPS) - 1.0) + ngon_circle)/(r_factor + EPS) * p;
+		</code>
+	</variation>
+	<variation name="curl">
+		<parameters>
+			<parameter name="curl_c1" min="0" max="1" integral="false" />
+			<parameter name="curl_c2" min="0" max="1" integral="false" />
+		</parameter>
+		<code>
+			float re = 1 + (curl_c1 * p.x) + (curl_c2 * p.x * p.x) - p.y * p.y;
+			float im = curl_c1 * p.y + 2 * curl_c2 * p.x * p.y;
+			
+			result += weight/(re * re + im * im) * vec2( p.x * re - p.y * im, p.y * re - p.x * im );
+		</code>
+	</variation>
+	<variation name="rectangles">
+		<parameters>
+			<parameter name="rectangles_x" min="0" max="1" integral="false" />
+			<parameter name="rectangles_y" min="0" max="1" integral="false" />
+		</parameters>
+		<code>
+			float rx, ry;
+			if( rectangles_x == 0 ) rx = p.x;
+			else rx = (2 * floor(p.x/rectangles_x) + 1) * rectangles_x - p.x;
+			
+			if( rectangles_y == 0 ) ry = p.y;
+			else rx = (2 * floor(p.y/rectangles_y) + 1) * rectangles_y - p.y;
+			
+			result += weight * vec2( rx, ry );
+		</code>
+	</variation>
+	<variation name="arch">
+		<code>
+			float ang = randFloat() * weight * PI;
+			result += weight * vec2( sin(ang), tan(ang) * sin(ang) );
+		</code>
+	</variation>
+	<variation name="tangent">
+		<code>
+			result += weight * vec2( sin(p.y)/cos(p.y), tan(p.y) );
+		</code>
+	</variation>
+	<variation name="blade">
+		<code>
+			float br = randFloat() * weight * rSq;
+			float sinr = sin(br);
+			float cosr = cos(br);
+			result += weight * p.x * vec2( cosr + sinr, cosr - sinr );
+		</code>
+	</variation>
+	<variation name="secant2">
+		<code><![CDATA[
+			float cr = cos(weight * rSq);
+			float icr = 1.0/cr;
+			
+			result += weight * vec2( p.x, icr + (cr < 0)?1:-1);
+		]]></code>
+	</variation>
+	<variation name="twintrian">
+		<code>
+			float tr = randFloat() * weight * r;
+			float sinr = sin(tr);
+			float cosr = cos(tr);
+			
+			float diff = log(sinr * sinr)/LOG_10 + cosr;
+			if( BADVALUE(diff) ) diff = -30.0;
+			
+			result += weight * p.x * vec2( diff, diff - sinr * PI );
+		</code>
+	</variation>
+	<variation name="cross">
+		<code>
+			float s= p.x * p.x - p.y * p.y;
+			result += weight * sqrt( 1.0/(s * s + EPS) ) * p;
+		</code>
+	</variation>
+	<variation name="disc2">
+		<parameters>
+			<parameter name="disc2_rot" min="0" max=".5" integral="false" />
+			<parameter name="disc2_twist" min="0" max=".5" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float d2rtp = disc2_rot * PI;
+			float disc2_sinadd = sin(disc2_twist);
+			float disc2_cosadd = cos(disc2_twist);
+			
+			float k = 1.0;
+			if( disc2_twist > 2 * PI )
+				k = 1 + disc2_twist - 2 * PI;
+			else if( disc2_twist < -2 * PI )	
+				k = 1 + disc2_twist + 2 * PI;
+			
+			disc2_sinadd *= k;
+			disc2_cosadd *= k;
+			
+			float dt = disc2_rot * PI * (p.x + p.y);
+			result += weight * a/PI * vec2( sin(dt) + disc2_cosadd, cos(dt) + disc2_sinadd);
+		]]></code>
+	</variation>
+	<variation name="super_shape">
+		<parameters>
+			<parameter name="super_shape_rnd" min="0" max="1" integral="false" />
+			<parameter name="super_shape_m" min="0" max="1" integral="true" />
+			<parameter name="super_shape_n1" min="0" max="40" integral="false" />
+			<parameter name="super_shape_n2" min="0" max="20" integral="false" />
+			<parameter name="super_shape_n3" min="0" max="20" integral="false" />
+			<parameter name="super_shape_holes" min="0" max="0" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float st = .25 * (super_shape_m * t + PI);
+			float t1 = abs(sin(st));
+			float t2 = abs(cos(st));
+			t1 = pow(t1, super_shape_n2);
+			t2 = pow(t2, super_shape_n3);
+			
+			result += weight * ((super_shape_rnd * randFloat() + (1.0 - super_shape_rnd) * r - super_shape_holes) * pow(t1 + t2, -1.0/super_shape_n1)) / r * p;
+		]]></code>
+	</variation>
+	<variation name="flower">
+		<parameters>
+			<parameter name="flower_petals" min="0" max="4" integral="false" />
+			<parameter name="flower_holes" min="0" max="1" integral="false" />
+		</parameters>
+		<code>
+			result += weight * (randFloat() - flower_holes) * cos(flower_petals * t) * vec2( cos(t), sin(t) );
+		</code>
+	</variation>
+	<variation name="conic">
+		<parameters>
+			<parameter name="conic_eccentricity" min="0" max="1" integral="false" />
+			<parameter name="conic_holes" min="0" max="1" integral="false" />
+		</parameters>
+		<code>
+			result += weight * (randFloat() - conic_holes) * conic_eccentricity /(1 + conic_eccentricity * cos(t)) * vec2( cos(t), sin(t) );
+		</code>
+	</variation>
+	<variation name="parabola">
+		<parameters>
+			<parameter name="parabola_height" min=".5" max="1.5" integral="false" />
+			<parameter name="parabola_width" min=".5" max="1.5" integral="false" />
+		</parameters>
+		<code>
+			float sinR = sin(r);
+			result += weight * vec2( parabola_height * sinR * sinR * randFloat(), parabola_width * cos(r) * randFloat());
+		</code>
+	</variation>
+	<variation name="bent2">
+		<parameters>
+			<parameter name="bent2_x" min="-1.5" max="1.5" integral="false" />
+			<parameter name="bent2_y" min="-1.5" max="1.5" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			result += weight * vec2( (p.x < 0)? p.x * bent2_x: p.x, (p.y < 0)? p.y * bent2_y: p.y);
+		]]></code>
+	</variation>
+	<variation name="bipolar">
+		<parameters>
+			<parameter name="bipolar_shift" min="-1" max="1" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float x2 = p.x * 2;
+			float y = .5 * atan(2.0 * p.y, rSq - 1.0) + -.5 * PI * bipolar_shift;
+			
+			if( y > PI * .5 )
+				y = -PI * .5 + mod( y + -PI * 2, PI);
+			else if( y < -PI * .5 )
+				y = PI * .5 - mod( PI * .5 - y, PI);
+				
+			result += weight * 2 * PI * vec2( .25 * log( (rSq + x2 + 1)/(rSq - x2 + 1)), y );
+		]]></code>
+	</variation>
+	<variation name="butterfly">
+		<code>
+			float wx = weight * 1.3029400317411979;
+			float y2 = p.y * 2.0;
+			float r = wx * sqrt( abs(p.y * p.x)/(EPS + p.x * p.x + y2 * y2));
+			result += r * vec2( p.x, y2 );
+		</code>
+	</variation>
+	<variation name="cell">
+		<parameters>
+			<parameter name="cell_size" min=".5" max="2.5" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float inv_cellsize = 1.0/cell_size;
+			
+			int x = floor(p.x * inv_cellsize);
+			int y = floor(p.y * inv_cellsize);
+			
+			float dx = p.x - x * cell_size;
+			float dy = p.y - y * cell_size;
+			
+			if( x >= 0 ) x *= 2;
+			else x = -(2 * x + 1);
+			
+			if( y >= 0 ) y *= 2;
+			else y = -(2 * y + 1);
+			
+			result += weight * vec2( dx + x * cell_size, dy + y * cell_size );
+		]]></code>
+	</variation>
+	<variation name="cpow">
+		<parameters>
+			<parameter name="cpow_r" min="0" max="3" integral="false" />
+			<parameter name="cpow_i" min="-.5" max=".5" integral="false" />
+			<parameter name="cpow_power" min="0" max="5" integral="true" />
+		</parameters>
+		<code>
+			float lnr = .5 * log(rSq);
+			float va = 2.0 * PI/cpow_power;
+			float vc = cpow_r/cpow_power;
+			float vd = cpow_i/cpow_power;
+			float ang = vc * t + vd * lnr + va * floor( cpow_power * randFloat() );
+			
+			result += weight * exp( vc * lnr - vd * a ) * vec2( cos(ang), sin(ang) );
+		</code>
+	</variation>
+	<variation name="curve">
+		<parameters>
+			<parameter name="curve_xamp" min="-2.5" max="2.5" integral="false" />
+			<parameter name="curve_yamp" min="2" max="2" integral="false" />
+			<parameter name="curve_xlength" min="1" max="3" integral="false" />
+			<parameter name="curve_ylength" min="1" max="3" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float pc_xlen = curve_xlength * curve_xlength;
+			float pc_ylen = curve_ylength * curve_ylength;
+			
+			if( pc_xlen < 1e-20 ) pc_xlen = 1e-20;
+			if( pc_ylen < 1e-20 ) pc_ylen = 1e-20;
+			
+			result += weight * vec2( p.x + curve_xamp * exp(-p.y * p.y/pc_xlen), p.y + curve_yamp * exp(-p.x*-p.x/pc_ylen));
+		]]></code>
+	</variation>
+	<variation name="edisc">
+		<code><![CDATA[
+			float tmp = rSq + 1.0;
+			float tmp2 = 2.0 * p.x;
+			float r1 = sqrt(tmp + tmp2);
+			float r2 = sqrt(tmp - tmp2);
+			float xmax = (r1 + r2) * .5;
+			float a1 = log(xmax + sqrt(xmax - 1.0));
+			float a2 = -acos(p.x/xmax);
+			
+			result += weight/11.57034632 * vec2( cosh(a2) * cos(a1), sinh(a2) * sin(a1) * ((p.y > 0.0)? -1: 1));
+		]]></code>
+	</variation>
+	<variation name="elliptic">
+		<code><![CDATA[
+			float tmp = rSq + 1.0;
+			float x2 = 2 * p.x;
+			float xmax = .5 * (sqrt(tmp + x2) + sqrt(tmp - x2));
+			float a = p.x/xmax;
+			float b = 1.0 - a * a;
+			float ssx = xmax - 1.0;
+			
+			if( b < 0 )
+				b = 0;
+			else
+				b = sqrt(b);
+			
+			if( ssx < 0 )
+				ssx = 0;
+			else
+				ssx = sqrt(ssx);
+				
+			float w = weight / (PI * .5);
+			result.x += w * atan(a,b);
+			
+			if( p.y > 0 )
+				result.y += w * log(xmax + ssx);
+			else
+				result.y -= w * log(xmax + ssx);
+		]]></code>
+	</variation>
+	<variation name="escher">
+		<parameters>
+			<parameter name="escher_beta" min="-3.1415926536" max="3.1415926536" integral="false" />
+		</parameters>
+		<code>
+			float lnr = .5 * log( rSq );
+			float vc = .5 * (1 + cos(escher_beta));
+			float vd = .5 * sin(escher_beta);
+			float n = vc * a + vd * lnr;
+			result += weight * exp(vc * lnr - vd * a) * vec2( cos(n), sin(n) );
+		</code>
+	</variation>
+	<variation name="polar2">
+		<code>
+			result += weight / PI * vec2( t, .5 * log(rSq) );
+		</code>
+	</variation>
+	<variation name="foci">
+		<code>
+			float expx = exp(p.x) * .5;
+			float expnx = .25/expx;
+			
+			result += weight/(expx + expnx - cos(p.y)) * vec2( expx - expnx, sin(p.y) );
+		</code>
+	</variation>
+	<variation name="lazysusan">
+		<parameters>
+			<parameter name="lazysusan_x" min="-2" max="2" integral="false" />
+			<parameter name="lazysusan_y" min="-2" max="2" integral="false" />
+			<parameter name="lazysusan_spin" min="-3.1415926536" max="3.1415926536" integral="false" />
+			<parameter name="lazysusan_space" min="-2" max="2" integral="false" />
+			<parameter name="lazysusan_twist" min="-2" max="2" integral="false" />
+		</parameters>
+		<code><![CDATA[
+			float x = p.x - lazysusan_x;
+			float y = p.y - lazysusan_y;
+			float lsr = sqrt( x * x + y * y );
+			
+			if( lsr < weight )
+			{
+				float lsa = atan(y,x) + lazysusan_spin + lazysusan_twist * (weight - lsr);
+				lsr = weight * lsr;
+				result += vec2( lsr * cos(lsa) + lazysusan_x, lsr * sin(lsa) - lazysusan_y );
+			}
+			else
+			{
+				lsr = weight * (1.0 + lazysusan_space/lsr);
+				result += vec2( lsr * x + lazysusan_x, lsr * y + lazysusan_y );
+			}
+		]]></code>
+	</variation>
+	<variation name="loonie">
+		<code><![CDATA[
+			float w2 = weight * weight;
+			
+			if( rSq < w2 )
+				result += weight * sqrt(w2/rSq - 1.0) * p;
+			else result += weight * p;
+		]]></code>
+	</variation>
+	<variation name="scry">
+		<code>
+			result += 1.0/(r * (rSq + 1.0/(weight + EPS))) * p;
+		</code>
+	</variation>
+	<variation name="modulus">
+		<parameters>
+			<parameter name="modulus_x" min="-1" max="1" integral="false"/>
+			<parameter name="modulus_y" min="-1" max="1" integral="false"/>
+		</parameters>
+		<code><![CDATA[
+			float xr = 2 * modulus_x;
+			float yr = 2 * modulus_y;
+			
+			vec2 add = vec2(0);
+			if( p.x > modulus_x )
+				add.x = -modulus_x + modf(p.x + modulus_x, xr);
+			else if( p.x < -modulus_x )
+				add.x = modulus_x - modf(modulus_x - p.x, xr);
+			else add.x = p.x;
+			
+			if( p.y > modulus_y )
+				add.y = -modulus_y + modf(p.y + modulus_y, yr);
+			else if( p.y < -modulus_y )
+				add.y = modulus_y - modf(modulus_y - p.y, yr);
+			else add.y = p.y;
+			
+			result += add * weight;
+		]]></code>
+	</variation>
+	<variation name="stripes">
+		<parameters>
+			<parameter name="stripes_space" min="0" max="1" integral="false" />
+			<parameter name="stripes_warp" min="0" max="5" integral="false" />
+		</parameters>
+		<code>
+			float roundx, offsetx;
+			roundx = floor(p.x + .5);
+			offsetx = p.x - roundx;
+			
+			result += weight * vec2( offsetx * (1.0 - stripes_space) + roundx, p.y + offsetx * offsetx * stripes_warp);
+		</code>
+	</variation>
+	<variation name="tree_root">
+		<code><![CDATA[
+			vec2 vec;
+			if( randFloat() < .5 )
+				vec = vec2( p.y/SQRT_2 + 1.5, -p.x/SQRT_2 + 1.5 );
+			else
+				vec = vec2( -p.y/SQRT_2 + .5, p.x / SQRT_2 + .5 );
+			
+			vec2 add;
+			if( randFloat() < .5 )
+				add = vec2( vec.x - 2.0, vec.y );
+			else
+			{
+				float denom = (vec.x - 2) * (vec.x - 2) + vec.y * vec.y;
+				add = vec2( vec.x - 2.0, vec.y ) / denom;
+			}
+			
+			result += weight * add;
+		]]></code>
+	</variation>
+	<variation name="whorl">
+		<parameters>
+			<parameter name="whorl_inside" min="0" max="1" integral="false" />
+			<parameter name="whorl_outside" min="0" max="1" integral="false" />
+		</parameters>
+		<code><![CDATA[
+		
+			float wa;
+			if( r < weight )
+				wa = a +  whorl_inside/(weight - r);
+			else
+				wa = a + whorl_outside/(weight - r);
+			
+			result += weight * r * vec2( cos(wa), sin(wa) );
+		]]></code>
+	</variation>
+	<variation name="waves2">
+		<parameters>
+			<parameter name="waves2_scalex" min=".5" max="1.5" integral="false" />
+			<parameter name="waves2_scaley" min=".5" max="1.5" integral="false" />
+			<parameter name="waves2_freqx" min="0" max="4" integral="false" />
+			<parameter name="waves2_freqy" min="0" max="4" integral="false" />
+		</parameters>
+		<code>
+			result += weight * vec2( p.x + waves2_scalex*sin(p.y * waves2_freqx), p.y + waves2_scaley*sin(p.x * waves2_freqy));
+		</code>
+	</variation>
+	<variation name="regular">
+		<parameters>
+			<parameter name="regular_power" min="2" max="8" integral="true"/>
+			<parameter name="regular_dist" min=".5" max="1.5" integral="false"/>
+			<parameter name="regular_speed" min="0" max="1" integral="false"/>
+		</parameter>
+		<code>
+			float rot = (2 * PI)/regular_power;
+			float a = floor( randFloat() * regular_power ) * rot;
+			
+			vec2 v = regular_dist * vec2( cos(a), sin(a) );
+			result += weight * (v * (1 - regular_speed) + p * (regular_speed));
+		</code>
+	</variation>
+	<variation name="rectangular">
+		<code>
+			result += weight * p.x * vec2( cos(p.y), sin(p.y) );
+		</code>
+	</variation>
+	<variation name="auger">
+		<parameters>
+			<parameter name="auger_sym" min="0" max="0" integral="false" />
+			<parameter name="auger_weight" min=".5" max="1" integral="false" />
+			<parameter name="auger_freq" min="1" max="6" integral="true" />
+			<parameter name="auger_scale" min="0" max="1" integral="false" />
+		</parameters>
+		<code>
+			float s = sin(auger_freq * p.x);
+			float t = sin(auger_freq * p.y);
+			float dy = p.y + auger_weight * (auger_scale * s/2.0 + abs(p.y) * s);
+			float dx = p.x + auger_weight * (auger_scale * t/2.0 + abs(p.x) * t);
+			
+			result += weight * vec2( p.x + auger_sym *(dx - p.x), dy);
+		</code>
+	</variation>
+</variations>

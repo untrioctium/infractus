@@ -1,0 +1,10 @@
+<program>
+	<name>Newton</name>
+	<author>Alex Riley</author>
+	<email>a.s.riley@gmail.com</email>
+	<description>Creates fractals based on Newton's method.</description>
+	<file>newton.lua</file>
+	<loader>LuaProgramLoader</loader>
+	
+	<attributes/>
+</program>

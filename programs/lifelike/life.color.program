@@ -1,0 +1,23 @@
+<program>
+	<engines>
+		<engine>
+			<file>life.color.frag</file>
+			<name>GLSLComputeEngine</name>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="deathStates" type="int" />
+			<parameter name="hueSpacing" type="int" />
+		</parameters>
+	</input>
+		
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

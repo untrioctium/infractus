@@ -1,0 +1,77 @@
+/** @page BasicTutorial Basic Tutorial
+
+@section tutorial_intro Introduction
+
+This tutorial aims to provide a basic understanding of the process that goes
+into creating programs, providing them inputs, and getting their outputs.
+
+For this example, the engine used is the GLSLComputeEngine, though one only
+needs to change the engine specific code to use a different engine.  The
+other concepts, such as loading a engine, creating a program, executing a
+program, and transferring data back and forth are independent of the engine
+used.
+
+@section tutorial_motivation Tutorial Motivation
+
+For this example, we will write a program that takes a very large 2D float array
+generated on the CPU side and muliplies each component by a certain scalar
+value.  Performing this task using no parallelization on the CPU could take
+a high amount of time depending on the size of the array.  This kind of task is
+exactly the kind that libcompute was developed for!
+
+@section getting_started Getting Started
+
+This tutorial assumes that you have already built libcompute and have it 
+installed in whatever manner your compilation environment demands.  If you
+haven't done this yet, see the \ref Installation "Installation Guide" for
+a basic overview of the process for most supported platforms.
+
+@subsection getting_engine Getting the GLSLComputeEngine
+
+We will first need to grab a copy of the GLSLComputeEngine so that our program
+can utilize it.  The file we need should be located in the plugins/GLSLComputeEngine
+directory of wherever libcompute was built.  The file we want will be named
+GLSLComputeEngine, and will have a extension of either .dll or .so depending on if
+you are using Windows or a Unix OS respectively.  Simply copy the engine file
+into the directory where you are creating the example program.
+
+@section basic_setup Basic Setup
+
+The first thing we will want to do is include the appropriate headers:
+@code
+	// included so we can use malloc
+	#include <stdlib.h>
+	
+	// libcompute's main header; includes every component of the library
+	#include <libcompute.hpp>
+@endcode
+
+All of libcompute's classes are located in the \c libcompute namespace.  For
+the purpose of this tutorial, we will use the libcompute namespace, though
+in real code it is suggested you use a namespace alias.
+@code
+	using namespace libcompute;
+@endcode
+
+Now we will declare our main function and set up a 500 x 500 floating point
+array with random elements.
+@code
+	int main( int argc, char** argv )
+	{
+		const int ARRAY_WIDTH = 500;
+		const int ARRAY_HEIGHT = 500;
+		float* array = (float*) malloc( sizeof(float) * ARRAY_WIDTH * ARRAY_HEIGHT);
+		
+		for( int i = 0; i < ARRAY_WIDTH * ARRAY_HEIGHT; i++ )
+			array[i] = rand();
+@endcode
+
+Now we will begin the process of setting up the program, but first let's open a
+try/catch block.  libcompute throws a lot of exceptions, but really only in cases
+that require immediate attention.
+@code
+		try
+		{
+@endcode
+
+*/

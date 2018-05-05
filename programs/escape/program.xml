@@ -1,0 +1,10 @@
+<program>
+	<name>Escape</name>
+	<author>Alex Riley</author>
+	<email>a.s.riley@gmail.com</email>
+	<description>Creates images based on function escape times.</description>
+	<file>escape.lua</file>
+	<loader>LuaProgramLoader</loader>
+	
+	<attributes/>
+</program>

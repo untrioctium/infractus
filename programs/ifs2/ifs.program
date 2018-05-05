@@ -1,0 +1,28 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>ifs.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+		<count>2</count>
+		
+		<parameters>
+			<parameter name="time" 		type="int" />
+			<parameter name="iterCount" type="int" />
+			<parameter name="matCount"	type="int" />
+			<parameter name="seed"		type="int" />
+			<parameter name="colWeight" type="float" />
+			<parameter name="densitySum" type="float" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+		<count>2</count>
+	</output>
+</program>

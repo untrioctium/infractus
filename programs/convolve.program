@@ -1,0 +1,21 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>convolve.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="convolveKernel" type="float" size="9" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

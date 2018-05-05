@@ -1,0 +1,26 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>tonemap.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="exposure" type="float" />
+			<parameter name="denom" type="float" />
+			<parameter name="preGamma" type="float" />
+			<parameter name="postGamma" type="float" />
+			<parameter name="alpha" type="float" />
+			<parameter name="useAlpha" type="int" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

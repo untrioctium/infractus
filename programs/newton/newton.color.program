@@ -1,0 +1,25 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>newton.color.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="maxIterations" type="int" />
+			<parameter name="requiredPrecision" type="float" />
+			<parameter name="hueOffset" type="float" />
+			<parameter name="blend" type="float" />
+			<parameter name="gamma" type="vec3" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

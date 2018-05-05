@@ -1,0 +1,12 @@
+<program>
+	<name>IFS2</name>
+	<author>Alex Riley</author>
+	<email>a.s.riley@gmail.com</email>
+	<description>Models various Like-like 2D cellular automata.</description>
+	<file>ifs.lua</file>
+	<loader>LuaProgramLoader</loader>
+	
+	<attributes>
+		<grid_based/>
+	</attributes>
+</program>

@@ -1,0 +1,24 @@
+<program>
+	<engines>
+		<engine>
+			<file>life.frag</file>
+			<name>GLSLComputeEngine</name>
+		</engine>
+	</engines>
+
+	<input>
+		<type>float</type>
+		<size>4</size>
+
+		<parameters>
+			<parameter name="liveRules" type="int" />
+			<parameter name="birthRules" type="int" />
+			<parameter name="deathStates" type="int" />
+		</parameters>
+	</input>
+		
+	<output>
+		<type>float</type>
+		<size>4</size>
+	</output>
+</program>

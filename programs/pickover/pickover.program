@@ -1,0 +1,29 @@
+<program>
+	<engines>
+		<engine>
+			<name>GLSLComputeEngine</name>
+			<file>pickover.frag</file>
+		</engine>
+	</engines>
+
+	<input>
+		<type>void</type>
+		
+		<parameters>
+			<parameter name="iterCount" type="int" />
+			<parameter name="escapeRadius" type="float" />
+			<parameter name="param" type="float" size="32" />
+			<parameter name="alpha" type="float" />
+			<parameter name="lenPow" type="float" />
+			<parameter name="anglePow" type="float" />
+			<parameter name="hueOffset" type="float" />
+			<parameter name="time" type="int" />
+			<parameter name="seed" type="int" />
+		</parameters>
+	</input>
+	<output>
+		<type>float</type>
+		<size>4</size>
+		<count>2</count>
+	</output>
+</program>

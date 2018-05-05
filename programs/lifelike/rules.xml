@@ -1,0 +1,9 @@
+<rules>
+	<rule name="life" birth="3" survival="23" death_states="0" good_random=".5" />
+	<rule name="coral" birth="3" survival="45678" death_states="0" good_random=".2" />
+	<rule name="starwars" birth="2" survival="345" death_states="5" good_random=".1" />
+	<rule name="stains" birth="3678" survival="235678" death_states="0" good_random=".1" />
+	<rule name="coagulations" birth="378" survival="235678" death_states="0" good_random=".2" />
+	<rule name="maze" birth="3" survival="12345" death_states="0" good_random=".01" />
+	<rule name="walls" birth="45678" survival="2345" death_states="0" good_random=".4" />
+</rules>
