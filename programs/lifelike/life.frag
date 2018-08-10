@@ -13,7 +13,7 @@ void main()
 			if( coord.x > 1 ) coord.x = fract(coord.x);
 			if( coord.y > 1 ) coord.y = fract(coord.y);
 			if( coord.y < 0 ) coord.y = 1 - coord.y;
-			else neighborCount += (texture(intex, coord).x > 0.0)? 1: 0;
+			neighborCount += (texture(intex, coord).x > 0.0)? 1: 0;
 		}
 	
 	if( age > 0 ) neighborCount--;
