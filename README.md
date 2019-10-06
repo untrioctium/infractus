@@ -10,7 +10,7 @@ some safety/debugging that was originally done with boost::exception. Currently 
 
 To run, clone the project, and install the required dependencies. Building is done under clang via makefiles.
 ```
-sudo apt install libglew-dev libsdl2-dev libsdl2-image-dev liblua5.3-dev
+sudo apt install libglew-dev libsdl2-dev libsdl2-image-dev liblua5.3-dev libboost-dev
 git clone https://github.com/untrioctium/infractus
 cd infractus
 make
