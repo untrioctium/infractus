@@ -44,7 +44,7 @@ public:
 	 * This function is only called once for any instance of an InfractusProgram.
 	 * Programs 
 	 */
-	virtual void init( bool usingTextureSource, unsigned int width, unsigned int height ) throw(InfractusProgramException) {}
+	virtual void init( bool usingTextureSource, unsigned int width, unsigned int height ) {}
 	
 	/**
 	 * @brief Sets the texture used for this program.
@@ -61,7 +61,7 @@ public:
 	 * This function will only be called if init() was called with interactive
 	 * as true.
 	 */
-	virtual void input() throw(InfractusProgramException) {};
+	virtual void input() {};
 	
 	/**
 	 * @brief Run a frame of the program.
@@ -80,7 +80,7 @@ public:
 	 * of some object, etc.  How the scale is handled, though, should be consistent
 	 * throughout a program's lifetime.
 	 */
-	virtual void run( int dt, float scale ) throw(InfractusProgramException) {};
+	virtual void run( int dt, float scale ) {};
 	
 	/**
 	 * @brief Save all state information needed to recreate a single frame of this program later.
@@ -103,7 +103,7 @@ public:
 	 * This command is only called if the program does not have the
 	 * "no_buffer" or "texture_source" attributes.
 	 */
-	virtual void draw() throw(InfractusProgramException) {}
+	virtual void draw() {}
 	
 	/**
 	 * @brief Gets the output texture of this program.
@@ -125,7 +125,7 @@ public:
 	 * in a single frame.  However, it is guaraneteed that the run() method will be called
 	 * before the run() method of any programs that will use this texture.
 	 */
-	virtual Texture getOutput() throw(InfractusProgramException)
+	virtual Texture getOutput() 
 	{
 		return bufferTexture_;
 	}
@@ -139,7 +139,7 @@ public:
 	 * written in a scripting language, the command would be executed in language
 	 * interpreter, with the variable \c self represting the active instance.
 	 */
-	virtual std::string executeCommand( const std::string& command ) throw(InfractusProgramException) 
+	virtual std::string executeCommand( const std::string& command ) 
 	{
 		return std::string();
 	}

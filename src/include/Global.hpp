@@ -12,7 +12,6 @@
 #include <stack>
 #include <set>
 
-#include <boost/any.hpp>
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 

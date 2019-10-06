@@ -1,9 +1,9 @@
 OBJS = Infractus.o InputSystem.o LoggingSystem.o GraphicsSystem.o ConfigSystem.o FileSystem.o ProgramManager.o
-CC = g++
+CC = clang
 DEBUG = -g
-LIBS = `sdl-config --libs` -lcompute -lstdc++ -lSDL_image -lglew32 -lglu32 -lopengl32 -lstdc++fs -lluabind -llua
-CFLAGS = -Wall -c -I../libcompute/include -I./include `sdl-config --cflags` -fPIC $(DEBUG)
-LFLAGS = -Wall -L/mingw64/lib -L/mingw32/lib -L../libcompute/lib $(LIBS) $(DEBUG)
+LIBS = `sdl2-config --libs` -lcompute -lstdc++ -lSDL2_image -lGL -lGLU -lGLEW -lstdc++fs -llua5.2 -lm
+CFLAGS = -Wall -c -I../libcompute/include -I./include -I../extern/sol2/single/include -I/usr/include/lua5.2 `sdl2-config --cflags` -fPIC --std=c++2a $(DEBUG)
+LFLAGS = -Wall -L../libcompute/lib  $(LIBS) $(DEBUG)
 
 infractus: $(OBJS)
 	$(CC) $(OBJS) $(LFLAGS) -o infractus
@@ -23,7 +23,7 @@ ConfigSystem.o: ConfigSystem.cpp include/ConfigSystem.hpp
 FileSystem.o: FileSystem.cpp include/FileSystem.hpp
 	$(CC) $(CFLAGS) FileSystem.cpp
 
-ProgramManager.o: ProgramManager.cpp include/InfractusProgram.hpp include/ProgramManager.hpp
+ProgramManager.o: ProgramManager.cpp include/InfractusProgram.hpp include/ProgramManager.hpp include/LuaInfractusProgram.hpp include/LuaProgramLoader.hpp include/LuaHelpers.hpp
 	$(CC) $(CFLAGS) ProgramManager.cpp
 
 Infractus.o: Infractus.cpp include/FileSystem.hpp include/InfractusProgram.hpp include/Singleton.hpp include/Infractus.hpp include/LoggingSystem.hpp include/InputSystem.hpp include/GraphicsSystem.hpp include/Global.hpp include/InfractusConsole.hpp include/Array.hpp

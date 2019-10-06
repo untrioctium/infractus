@@ -1,17 +1,9 @@
 #include "Global.hpp"
 
-#include <lua.hpp>
-#include <luabind/luabind.hpp>
-#include <luabind/class.hpp>
-#include <luabind/exception_handler.hpp>
-#include <luabind/operator.hpp>
-#include <luabind/iterator_policy.hpp>
-#include <luabind/adopt_policy.hpp>
+#include <sol/sol.hpp>
 
-#include <boost/exception/diagnostic_information.hpp> 
-#include <boost/exception_ptr.hpp> 
 #include <libcompute.hpp>
-
+#include <iostream>
 #include "Array.hpp"
 #include "GraphicsSystem.hpp"
 #include "InputSystem.hpp"
@@ -27,11 +19,15 @@
 
 #include "Infractus.hpp"
 
-#include <boost/cast.hpp>
-
 #include <sstream>
 
 using namespace libcompute;
+
+namespace sol {
+template<>
+struct is_container<boost::property_tree::ptree> : std::false_type {};
+}
+
 #include "LuaHelpers.hpp"
 
 class LuaProgramLoader: public ProgramLoader
@@ -39,9 +35,20 @@ class LuaProgramLoader: public ProgramLoader
 public:
 	LuaProgramLoader(): ProgramLoader("LuaProgramLoader") {}
 	
-	InfractusProgram* createInstance( const std::string& scriptPath ) throw(InfractusProgramException)
+	InfractusProgram* createInstance( const std::string& scriptPath )
 	{
-		printf(scriptPath.c_str());
+		auto prog = new LuaInfractusProgram{};
+		auto state = new sol::state{};
+
+		loadSolBindings(*state);
+		auto def = state->do_file(scriptPath).get<sol::table>();
+		def["getWorkingDirectory"] = [prog](sol::table self) { return prog->getWorkingDirectory(); };
+		def["setBufferTexture"] = [prog](sol::table self, Texture bufferTexture) { prog->setBufferTexture(bufferTexture);};
+		def["getBufferTexture"] = [prog](sol::table self) { return prog->getBufferTexture();};
+		prog->setLuaState(state, def);
+		return prog;
+
+		/*printf(scriptPath.c_str());
 		lua_State* L = luaL_newstate();
 		try
 		{
@@ -51,412 +58,367 @@ public:
 			{
 				std::string error = lua_tostring(L, -1);
 				lua_close(L);
-				BOOST_THROW_EXCEPTION( InfractusProgramException() << 
-					InfractusProgramException::errorString(error));
+				std::cout << error << std::endl;
 			}
 	
 			LuaInfractusProgram* instance = luabind::call_function<LuaInfractusProgram*>(L, "getProgram")[ luabind::adopt(luabind::result) ];
 			instance->setLuaState(L);
 			return instance;
 		}
-		catch( luabind::error& e )
+		catch( ...)
 		{
 			std::string error = lua_tostring(L, -1);
+			std::cout << error << std::endl;
 			lua_close(L);
-			BOOST_THROW_EXCEPTION( InfractusProgramException() << 
-				InfractusProgramException::errorString(error));
-		}
+		}*/
 	}
 	
-	void loadLuaBindings( lua_State* L )
-	{
-		luaL_openlibs(L);
+	void loadSolBindings( sol::state& state) {
 
-		using namespace luabind;
+		state.open_libraries(sol::lib::base, sol::lib::string, sol::lib::math, sol::lib::table, sol::lib::io);
 
-		open(L);
+		state["ticks"] = &SDL_GetTicks;
+		state["loadImage"] = &loadImage;
 
-		luabind::register_exception_handler<libcomputeException>(&translateLibcomputeException);
-		luabind::set_pcall_callback( &handleErrors );
+#define ARRAY1D_DEFINE(T)\
+	class_<Array1D<T> >("Array1D" #T)\
+		.def(constructor<int>())\
+		.def("size", &Array1D<T>::size)\
+		.def("get", &Array1D<T>::get)\
+		.def("getPtr", &Array1D<T>::getPtr)\
+		.def("getRef", &Array1D<T>::getRef)\
+		.def("set", &Array1D<T>::set)\
+		.def("setAll", &Array1D<T>::setAll)\
+		.def("array", &createVoidWrapper<T>)\
 
-		lua_pushcfunction( L, luaPrint );
-		lua_setglobal(L, "print");
+		auto a1f_ut = state.new_usertype<Array1D<float>>("Array1Dfloat", sol::call_constructor, sol::constructors<Array1D<float>(int)>());
+		a1f_ut["size"] = &Array1D<float>::size;
+		a1f_ut["get"] = &Array1D<float>::get;
+		a1f_ut["getPtr"] = &Array1D<float>::getPtr;
+		a1f_ut["getRef"] = &Array1D<float>::getRef;
+		a1f_ut["set"] = &Array1D<float>::set;
+		a1f_ut["setAll"] = &Array1D<float>::setAll;
+		a1f_ut["array"] = [](Array1D<float>& self) { return (void*) self.array();};
+		
+		auto ptree_ut = state.new_usertype<boost::property_tree::ptree>("Ptree", sol::no_constructor);
+		ptree_ut["getChild"] = &ptreeGetChild;
+		ptree_ut["get"] = &ptreeGet;
+		ptree_ut["data"] = &ptreeData;
+		ptree_ut["children"] = &ptreeChildren;
+		ptree_ut["size"] = &ptree::size;
+		ptree_ut["count"] = &ptree::count;
 
-		module(L)
-		[	
-			def("ticks", &SDL_GetTicks), 
-			//def("test", &test),
-			ARRAY1D_DEFINE(ubyte),
-			ARRAY1D_DEFINE(float),
-			def("loadImage", &loadImage),
-			//ARRAY1D_DEFINE_VEC( 4, float ),
-			class_<ptree::value_type>("PtreeValue")
-				.def_readonly("first", &ptree::value_type::first)
-				.def_readonly("second", &ptree::value_type::second),
-			class_<ptree>("Ptree")
-				.def("getChild", &ptreeGetChild)
-				.def("get", &ptreeGet)
-				.def("data", &ptreeData)
-				.def("children", &ptreeChildren)
-				.def("size", &ptree::size)
-				.def("count", &ptree::count),
-			class_<vec2>("vec2")
-				//.def(tostring(self))
-				.def(constructor<>())
-				.def(constructor<float,float>())
-				.def_readwrite("x", &vec2::x)
-				.def_readwrite("y", &vec2::y)
-				.def("arg", &vec2::arg)
-				.def("mag", &vec2::mag)
-				.def("normalize", &vec2::normalize)
-				.def("dot", &vec2::dot)
-				.def("comp", &vec2::comp)
-				.def("proj", &vec2::proj)
-				.def(const_self/float())
-				.def(const_self*float())
-				.def(const_self + vec2())
-				.def(const_self - vec2()),
-			class_<vec3>("vec3")
-				.def(constructor<>())
-				.def(constructor<float, float, float>())
-				.def_readwrite("x", &vec3::x)
-				.def_readwrite("y", &vec3::y)
-				.def_readwrite("z", &vec3::z)
-				.def(const_self/float())
-				.def(const_self*float())
-				.def(const_self + vec3())
-				.def(const_self - vec3()),
-			class_<vec4>("vec4")
-				.def(constructor<>())
-				.def(constructor<float,float,float,float>())
-				.def_readwrite("x", &vec4::x)
-				.def_readwrite("y", &vec4::y)
-				.def_readwrite("z", &vec4::z)
-				.def_readwrite("w", &vec4::w)
-				.def(const_self/float())
-				.def(const_self*float())
-				.def(const_self + vec4())
-				.def(const_self - vec4()),
-			class_<mat3>("mat3")
-				.def(constructor<>())
-				.def("set", &matSet<mat3>)
-				.def("get", &matGet<mat3>)
-				.def(self * float())
-				.def(self + other<mat3>())
-				.def(self - other<mat3>()),
-			class_<mat4>("mat4")
-				.def(constructor<>())
-				.def("set", &matSet<mat4>)
-				.def("get", &matGet<mat4>)
-				.def(self * float())
-				.def(self + other<mat4>())
-				.def(self - other<mat4>()),
-			class_<Plugin>("Plugin")
-				.def("toEngine", &pluginToEngine),
-			class_<Engine, Plugin>("Engine")
-				.def("fromTexture", &engineFromTexture)
-				.def("reduce", &Engine::reduce)
-				.enum_("reduction_types")
-				[
-					value("Minimum", Engine::Minimum),
-					value("Maximum", Engine::Maximum),
-					value("Sum", Engine::Sum)
-				],
-			class_<Engine::DataStorage>("DataStorage")
-				.def("copyToArray", &dataStorageCopyToArray)
-				.def("copyFromArray", &dataStorageCopyFromArray)
-				.def("toTexture", &dataStorageToTexture),
-			class_<Engine::DataStorage::Ptr>("Engine_DataStorage_Ptr"),
-			class_<VoidWrapper>("VoidWrapper"),
-			class_<Parameter>("Parameter")
-				.def("getFloat", &parameterGet<float>)
-				.def("setFloat", &parameterSet<float>)
-				.def("getInt", &parameterGet<int>)
-				.def("setInt", &parameterSet<int>)
-				.def("setVec2", &parameterSet<vec2>)
-				.def("getVec2", &parameterGetRef<vec2>)
-				.def("setVec3", &parameterSet<vec3>)
-				.def("getVec3", &parameterGetRef<vec3>)
-				.def("setVec4", &parameterSet<vec4>)
-				.def("getVec4", &parameterGetRef<vec4>)
-				.def("getMat3", &parameterGetRef<mat3>)
-				.def("setMat3", &parameterSet<mat3>)
-				.def("getMat4", &parameterGetRef<mat4>)
-				.def("setMat4", &parameterSet<mat4>)
-				.def("size", &Parameter::size)
-				.def("type", &Parameter::type)
-				.def("at", &parameterAt)
-				.enum_("parameter_types")
-				[
-					value("Int", Parameter::Int),
-					value("Float", Parameter::Float),
-					value("Vec2", Parameter::Vec2),
-					value("Vec3", Parameter::Vec3),
-					value("Vec4", Parameter::Vec4),
-					value("Mat3", Parameter::Mat3),
-					value("Mat4", Parameter::Mat4)
-				],
-			class_<PluginManager>("PluginManager")
-				.def("loadPlugin", &PluginManager::loadPlugin)
-				.scope
-				[
-					def("instance", &Singleton<PluginManager>::instance)
-				],
-			class_<InfractusProgram, LuaInfractusProgram>("InfractusProgram")
-				.def(constructor<>())
-				.def("init", &InfractusProgram::init, &LuaInfractusProgram::default_init)
-				.def("input", &InfractusProgram::input, &LuaInfractusProgram::default_input)
-				.def("run", &InfractusProgram::run, &LuaInfractusProgram::default_run)
-				.def("draw", &InfractusProgram::draw, &LuaInfractusProgram::default_draw)
-				.def("getOutput", &InfractusProgram::getOutput, &LuaInfractusProgram::default_getOutput)
-				.def("getBufferTexture", &InfractusProgram::getBufferTexture)
-				.def("setBufferTexture", &InfractusProgram::setBufferTexture)
-				.def("getWorkingDirectory", &InfractusProgram::getWorkingDirectory)
-				.enum_("ProgramModes")
-				[
-					value("Static", InfractusProgram::Static),
-					value("Dynamic", InfractusProgram::Dynamic),
-					value("Playback", InfractusProgram::Playback),
-					value("Interactive", InfractusProgram::Interactive)
-				],
-			class_<Program>("Program")
-				.def(constructor<>())
-				//.def(constructor<const std::string&>())
-				.def("load", &Program::load)
-				.def("setWorkingDirectory", &Program::setWorkingDirectory)
-				.def("getStorage", &Program::getStorage)
-				.def("setStorage", &Program::setStorage)
-				.def("bindEngine", &Program::bindEngine)
-				.def("unbindEngine", &Program::unbindEngine)
-				.def("allocateStorage", &Program::allocateStorage)
-				.def("run", &Program::run)
-				.def("addParameter", &Program::addParameter)
-				.def("addParameterArray", &Program::addParameterArray)
-				.def("getParameter", &Program::getParameter)
-				.def("getParameterNames", &Program::getParameterNames)
-				.def("swapInputOutput", &Program::swapInputOutput)
-				.def("setProgramLocationFile", &Program::setProgramLocationFile)
-				.def("setProgramLocationMemoryString", &programSetLocationMemoryString)
-				.def("getStorageVal", &getStorageVal)
-				.enum_("storage_types")
-				[
-					value("input", Program::Input),
-					value("output", Program::Output)
-				],
-			class_<std::vector<std::string> >("StringVector")
-				.def("size", &std::vector<std::string>::size)
-				.def("at", &vectorAt),
-			class_<ScreenInfo>("ScreenInfo")
-				.def_readonly("w", &ScreenInfo::w)
-				.def_readonly("h", &ScreenInfo::h)
-				.def_readonly("d", &ScreenInfo::d)
-				.def_readonly("f", &ScreenInfo::f),
-			class_<Point>("Point")
-				.def(constructor<float, float>())
-				.def(constructor<float, float, float>())
-				.def_readwrite("x", &Point::x)
-				.def_readwrite("y", &Point::y)
-				.def_readwrite("z", &Point::z),
-			class_<Color>("Color")
-				.def(constructor<float, float, float>())
-				.def(constructor<float, float, float, float>())
-				.def_readwrite("r", &Color::r)
-				.def_readwrite("g", &Color::g)
-				.def_readwrite("b", &Color::b)
-				.def_readwrite("a", &Color::a),
-			class_<Texture>("Texture")
-				.def(constructor<>())
-				.def_readonly("w", &Texture::w)
-				.def_readonly("h", &Texture::h),
-			class_<ConfigSystem>("ConfigSystem")
-				.def("isLoaded", &ConfigSystem::isLoaded)
-				.def("loadConfig", &ConfigSystem::loadConfig)
-				.def("getConfigPtree", &ConfigSystem::getConfigPtree)
-				.scope
-				[
-					def("instance", &Singleton<ConfigSystem>::instance)
-				],
-			class_<GraphicsSystem>("GraphicsSystem")
-				.def("getScreenInfo", &GraphicsSystem::getScreenInfo)
-				.def("loadTexture", &GraphicsSystem::loadTexture)
-				.def("drawTexture", &GraphicsSystem::drawTexture)
-				.def("setDrawColor", &GraphicsSystem::setDrawColor)
-				.def("resetDrawColor", &GraphicsSystem::resetDrawColor)
-				.def("drawRectangle", &GraphicsSystem::drawRectangle)
-				.def("getFontWidth", &GraphicsSystem::getFontWidth)
-				.def("getFontHeight", &GraphicsSystem::getFontHeight)
-				.def("drawText", &GraphicsSystem::drawText)
-				.def("drawLine", &GraphicsSystem::drawLine)
-				.def("drawPoint", &GraphicsSystem::drawPoint)
-				.def("getFPS", &GraphicsSystem::getFPS)
-				.def("delta", &GraphicsSystem::delta)
-				.def("setDrawingMode", &GraphicsSystem::setDrawingMode)
-				.def("getDrawingMode", &GraphicsSystem::getDrawingMode)
-				.def("pushDrawingMode", &GraphicsSystem::pushDrawingMode)
-				.def("popDrawingMode", &GraphicsSystem::popDrawingMode)
-				.def("pushViewMatrix", &GraphicsSystem::pushViewMatrix)
-				.def("popViewMatrix", &GraphicsSystem::popViewMatrix)
-				.def("translateView", &GraphicsSystem::translateView)
-				.def("rotateView", &GraphicsSystem::rotateView)
-				.def("scaleView", &GraphicsSystem::scaleView)
-				.def("drawPointArray", &GraphicsSystem::drawPointArray)
-				.def("createBufferTexture", &GraphicsSystem::createBufferTexture)
-				.def("drawToTexture", &GraphicsSystem::drawToTexture)
-				.def("clearToColor", &GraphicsSystem::clearToColor)
-				.def("setBlendingMode", &GraphicsSystem::setBlendingMode)
-				.def("useTexture", &GraphicsSystem::useTexture)
-				.def("setPointSize", &GraphicsSystem::setPointSize)
-				.def("saveTexture", &GraphicsSystem::saveTexture)
-				.def("freeTexture", &GraphicsSystem::freeTexture)
-				.enum_("draw_mode")
-				[
-					value("TwoD", GraphicsSystem::TwoD),
-					value("ThreeD", GraphicsSystem::ThreeD)
-				]
-				.enum_("blending_mode")
-				[
-					value("Normal", GraphicsSystem::Normal),
-					value("Additive", GraphicsSystem::Additive)
-				]
-				.scope
-				[
-					def("instance", &Singleton<GraphicsSystem>::instance)
-				],
-			class_<ScreenCoordinate>("ScreenCoordinate")
-				.def_readonly("x", &ScreenCoordinate::x)
-				.def_readonly("y", &ScreenCoordinate::y),
-			class_<InputSystem>("InputSystem")
-				.def("getKeyState", &InputSystem::getKeyState)
-				.def("getMousePosition", &InputSystem::getMousePosition)
-				.def("getMouseMotion", &InputSystem::getMouseMotion)
-				.def("getMouseButtonState", &InputSystem::getMouseButtonState)
-				.def("getMouseWheelScroll", &InputSystem::getMouseWheelScroll)
-				.enum_("sdl_keys")
-				[
-					value("K_BACKSPACE",SDLK_BACKSPACE),
-					value("K_TAB",SDLK_TAB),
-					value("K_RETURN",SDLK_RETURN),
-					value("K_ESCAPE",SDLK_ESCAPE),
-					value("K_BACKSPACE",SDLK_BACKSPACE),
-					value("K_TAB",SDLK_TAB),
-					value("K_RETURN",SDLK_RETURN),
-					value("K_PAUSE",SDLK_PAUSE),
-					value("K_ESCAPE",SDLK_ESCAPE),
-					value("K_SPACE",SDLK_SPACE),
-					value("K_COMMA",SDLK_COMMA),
-					value("K_MINUS",SDLK_MINUS),
-					value("K_PERIOD",SDLK_PERIOD),
-					value("K_SLASH",SDLK_SLASH),
-					value("K_0",SDLK_0),
-					value("K_1",SDLK_1),
-					value("K_2",SDLK_2),
-					value("K_3",SDLK_3),
-					value("K_4",SDLK_4),
-					value("K_5",SDLK_5),
-					value("K_6",SDLK_6),
-					value("K_7",SDLK_7),
-					value("K_8",SDLK_8),
-					value("K_9",SDLK_9),
-					value("K_COLON",SDLK_COLON),
-					value("K_SEMICOLON",SDLK_SEMICOLON),
-					value("K_EQUALS",SDLK_EQUALS),
-					value("K_LEFTBRACKET",SDLK_LEFTBRACKET),
-					value("K_BACKSLASH",SDLK_BACKSLASH),
-					value("K_RIGHTBRACKET",SDLK_RIGHTBRACKET),
-					value("K_a",SDLK_a),
-					value("K_b",SDLK_b),
-					value("K_c",SDLK_c),
-					value("K_d",SDLK_d),
-					value("K_e",SDLK_e),
-					value("K_f",SDLK_f),
-					value("K_g",SDLK_g),
-					value("K_h",SDLK_h),
-					value("K_i",SDLK_i),
-					value("K_j",SDLK_j),
-					value("K_k",SDLK_k),
-					value("K_l",SDLK_l),
-					value("K_m",SDLK_m),
-					value("K_n",SDLK_n),
-					value("K_o",SDLK_o),
-					value("K_p",SDLK_p),
-					value("K_q",SDLK_q),
-					value("K_r",SDLK_r),
-					value("K_s",SDLK_s),
-					value("K_t",SDLK_t),
-					value("K_u",SDLK_u),
-					value("K_v",SDLK_v),
-					value("K_w",SDLK_w),
-					value("K_x",SDLK_x),
-					value("K_y",SDLK_y),
-					value("K_z",SDLK_z),
-					value("K_DELETE",SDLK_DELETE),
-					value("K_KP0",SDLK_KP0),
-					value("K_KP1",SDLK_KP1),
-					value("K_KP2",SDLK_KP2),
-					value("K_KP3",SDLK_KP3),
-					value("K_KP4",SDLK_KP4),
-					value("K_KP5",SDLK_KP5),
-					value("K_KP6",SDLK_KP6),
-					value("K_KP7",SDLK_KP7),
-					value("K_KP8",SDLK_KP8),
-					value("K_KP9",SDLK_KP9),
-					value("K_KP_PERIOD",SDLK_KP_PERIOD),
-					value("K_KP_DIVIDE",SDLK_KP_DIVIDE),
-					value("K_KP_MULTIPLY",SDLK_KP_MULTIPLY),
-					value("K_KP_MINUS",SDLK_KP_MINUS),
-					value("K_KP_PLUS",SDLK_KP_PLUS),
-					value("K_KP_ENTER",SDLK_KP_ENTER),
-					value("K_KP_EQUALS",SDLK_KP_EQUALS),
-					value("K_UP",SDLK_UP),
-					value("K_DOWN",SDLK_DOWN),
-					value("K_RIGHT",SDLK_RIGHT),
-					value("K_LEFT",SDLK_LEFT),
-					value("K_INSERT",SDLK_INSERT),
-					value("K_HOME",SDLK_HOME),
-					value("K_END",SDLK_END),
-					value("K_PAGEUP",SDLK_PAGEUP),
-					value("K_PAGEDOWN",SDLK_PAGEDOWN),
-					value("K_F1",SDLK_F1),
-					value("K_F2",SDLK_F2),
-					value("K_F3",SDLK_F3),
-					value("K_F4",SDLK_F4),
-					value("K_F5",SDLK_F5),
-					value("K_F6",SDLK_F6),
-					value("K_F7",SDLK_F7),
-					value("K_F8",SDLK_F8),
-					value("K_F9",SDLK_F9),
-					value("K_F10",SDLK_F10),
-					value("K_F11",SDLK_F11),
-					value("K_F12",SDLK_F12),
-					value("K_F13",SDLK_F13),
-					value("K_F14",SDLK_F14),
-					value("K_F15",SDLK_F15),
-					value("K_NUMLOCK",SDLK_NUMLOCK),
-					value("K_SCROLLOCK",SDLK_SCROLLOCK),
-					value("K_RSHIFT",SDLK_RSHIFT),
-					value("K_LSHIFT",SDLK_LSHIFT),
-					value("K_RCTRL",SDLK_RCTRL),
-					value("K_LCTRL",SDLK_LCTRL),
-					value("K_RALT",SDLK_RALT),
-					value("K_LALT",SDLK_LALT),
-					value("K_LSUPER",SDLK_LSUPER),
-					value("K_RSUPER",SDLK_RSUPER),
-					value("K_SYSREQ",SDLK_SYSREQ),
-					value("K_MENU",SDLK_MENU),
-					value("K_POWER",SDLK_POWER)
-				]
-				.enum_("key_states")
-				[
-					value("up", InputSystem::Up),
-					value("released", InputSystem::Released),
-					value("pressed", InputSystem::Pressed),
-					value("down", InputSystem::Down)
-				]
-				.scope
-				[
-					def("instance", &Singleton<InputSystem>::instance)
-				]
-		];
+		auto vec2_ut = state.new_usertype<vec2>("vec2", 
+			sol::call_constructor, sol::constructors<vec2(), vec2(float, float)>());
+		vec2_ut["x"] = &vec2::x;
+		vec2_ut["y"] = &vec2::y;
+		vec2_ut["arg"] = &vec2::arg;
+		vec2_ut["mag"] = &vec2::mag;
+		vec2_ut["normalize"] = &vec2::normalize;
+		vec2_ut["dot"] = &vec2::dot;
+		vec2_ut["comp"] = &vec2::comp;
+		vec2_ut["proj"] = &vec2::proj;
+		vec2_ut[sol::meta_function::division] = &vec2::operator/;
+		vec2_ut[sol::meta_function::multiplication] = &vec2::operator*;
+		vec2_ut[sol::meta_function::addition] = &vec2::operator+;
+		vec2_ut[sol::meta_function::subtraction] = &vec2::operator-;
+
+		auto vec3_ut = state.new_usertype<vec3>("vec3",
+			sol::call_constructor, sol::constructors<vec3(), vec3(float, float, float)>());
+		vec3_ut["x"] = &vec3::x;
+		vec3_ut["y"] = &vec3::y;
+		vec3_ut["z"] = &vec3::z;
+		vec3_ut[sol::meta_function::division] = &vec3::operator/;
+		vec3_ut[sol::meta_function::multiplication] = &vec3::operator*;
+		vec3_ut[sol::meta_function::addition] = &vec3::operator+;
+		vec3_ut[sol::meta_function::subtraction] = &vec3::operator-;
+
+		auto vec4_ut = state.new_usertype<vec4>("vec4",
+			sol::call_constructor, sol::constructors<vec4(), vec4(float, float, float, float)>());
+		vec4_ut["x"] = &vec4::x;
+		vec4_ut["y"] = &vec4::y;
+		vec4_ut["z"] = &vec4::z;
+		vec4_ut["w"] = &vec4::w;
+		vec4_ut[sol::meta_function::division] = &vec4::operator/;
+		vec4_ut[sol::meta_function::multiplication] = &vec4::operator*;
+		vec4_ut[sol::meta_function::addition] = &vec4::operator+;
+		vec4_ut[sol::meta_function::subtraction] = &vec4::operator-;
+
+		auto mat3_ut = state.new_usertype<mat3>("mat3",
+			sol::call_constructor, sol::constructors<mat3()>());
+		mat3_ut["set"] = &matSet<mat3>;
+		mat3_ut["get"] = &matGet<mat3>;
+		mat3_ut[sol::meta_function::multiplication] = &mat3::operator*;
+		mat3_ut[sol::meta_function::addition] = &mat3::operator+;
+		mat3_ut[sol::meta_function::subtraction] = &mat3::operator-;
+
+		auto mat4_ut = state.new_usertype<mat4>("mat4",
+			sol::call_constructor, sol::constructors<mat4()>());
+		mat4_ut["set"] = &matSet<mat4>;
+		mat4_ut["get"] = &matGet<mat4>;
+		mat4_ut[sol::meta_function::multiplication] = &mat4::operator*;
+		mat4_ut[sol::meta_function::addition] = &mat4::operator+;
+		mat4_ut[sol::meta_function::subtraction] = &mat4::operator-;
+
+		auto plugin_ut = state.new_usertype<Plugin>("Plugin", sol::no_constructor);
+		plugin_ut["toEngine"] = &pluginToEngine;
+
+		auto engine_ut = state.new_usertype<Engine>("Engine", sol::no_constructor,
+			sol::base_classes, sol::bases<Plugin>());
+
+		engine_ut["fromTexture"] = &engineFromTexture;
+		engine_ut["reduce"] = &Engine::reduce;
+		engine_ut["Minimum"] = sol::var(Engine::Minimum);
+		engine_ut["Maximum"] = sol::var(Engine::Maximum);
+		engine_ut["Sum"] = sol::var(Engine::Sum);
+
+		auto ds_ut = state.new_usertype<Engine::DataStorage>("DataStorage", sol::no_constructor);
+		ds_ut["copyToArray"] = &dataStorageCopyToArray;
+		ds_ut["copyFromArray"] = &dataStorageCopyFromArray;
+		ds_ut["toTexture"] = &dataStorageToTexture;
+
+		auto param_ut = state.new_usertype<Parameter>("Parameter", sol::no_constructor);
+		param_ut["getFloat"] = &parameterGet<float>;
+		param_ut["setFloat"] = &parameterSet<float>;
+		param_ut["getInt"] = &parameterGet<int>;
+		param_ut["setInt"] = &parameterSet<int>;
+		param_ut["setVec2"] = &parameterSet<vec2>;
+		param_ut["getVec2"] = &parameterGetRef<vec2>;
+		param_ut["setVec3"] = &parameterSet<vec3>;
+		param_ut["getVec3"] = &parameterGetRef<vec3>;
+		param_ut["setVec4"] = &parameterSet<vec4>;
+		param_ut["getVec4"] = &parameterGetRef<vec4>;
+		param_ut["getMat3"] = &parameterGetRef<mat3>;
+		param_ut["setMat3"] = &parameterSet<mat3>;
+		param_ut["getMat4"] = &parameterGetRef<mat4>;
+		param_ut["setMat4"] = &parameterSet<mat4>;
+		param_ut["size"] = &Parameter::size;
+		param_ut["type"] = &Parameter::type;
+		param_ut["at"] = &parameterAt;
+		param_ut["Int"] = sol::var(Parameter::Int);
+		param_ut["Float"] = sol::var(Parameter::Float);
+		param_ut["Vec2"] = sol::var(Parameter::Vec2);
+		param_ut["Vec3"] = sol::var(Parameter::Vec3);
+		param_ut["Vec4"] = sol::var(Parameter::Vec4);
+
+		auto pm_ut = state.new_usertype<PluginManager>("PluginManager", sol::no_constructor);
+		pm_ut["loadPlugin"] = &PluginManager::loadPlugin;
+		pm_ut["instance"] = &Singleton<PluginManager>::instance;
+
+		auto prog_ut = state.new_usertype<Program>("Program", sol::call_constructor,
+			sol::constructors<Program()>());
+
+		prog_ut["load"] = &Program::load;
+		prog_ut["setWorkingDirectory"] = &Program::setWorkingDirectory;
+		prog_ut["getStorage"] = &Program::getStorage;
+		prog_ut["setStorage"] = &Program::setStorage;
+		prog_ut["bindEngine"] = &Program::bindEngine;
+		prog_ut["unbindEngine"] = &Program::unbindEngine;
+		prog_ut["allocateStorage"] = &Program::allocateStorage;
+		prog_ut["run"] = &Program::run;
+		prog_ut["addParameter"] = &Program::addParameter;
+		prog_ut["addParameterArray"] = &Program::addParameterArray;
+		prog_ut["getParameter"] = &Program::getParameter;
+		prog_ut["getParameterNames"] = &Program::getParameterNames;
+		prog_ut["swapInputOutput"] = &Program::swapInputOutput;
+		prog_ut["setProgramLocationFile"] = &Program::setProgramLocationFile;
+		prog_ut["setProgramLocationMemoryString"] = &programSetLocationMemoryString;
+		prog_ut["getStorageVal"] = &getStorageVal;
+		prog_ut["input"] = sol::var(Program::Input);
+		prog_ut["output"] = sol::var(Program::Output);
+
+		auto si_ut = state.new_usertype<ScreenInfo>("ScreenInfo", sol::no_constructor);
+		si_ut["w"] = sol::readonly(&ScreenInfo::w);
+		si_ut["h"] = sol::readonly(&ScreenInfo::h);
+		si_ut["d"] = sol::readonly(&ScreenInfo::d);
+		si_ut["f"] = sol::readonly(&ScreenInfo::f);
+
+		auto point_ut = state.new_usertype<Point>("Point", sol::call_constructor,
+			sol::constructors<Point(float, float), Point(float, float, float)>());
+		point_ut["x"] = &Point::x;
+		point_ut["y"] = &Point::y;
+		point_ut["z"] = &Point::z;
+
+		auto color_ut = state.new_usertype<Color>("Color", sol::call_constructor,
+			sol::constructors<Color(float, float, float), Color(float, float, float, float)>());
+		color_ut["r"] = &Color::r;
+		color_ut["g"] = &Color::g;
+		color_ut["b"] = &Color::b;
+		color_ut["a"] = &Color::a;
+
+		auto tex_ut = state.new_usertype<Texture>("Texture", sol::call_constructor,
+			sol::constructors<Texture()>());
+		tex_ut["w"] = sol::readonly(&Texture::w);
+		tex_ut["h"] = sol::readonly(&Texture::h);
+
+		auto conf_ut = state.new_usertype<ConfigSystem>("ConfigSystem", sol::no_constructor);
+		conf_ut["isLoaded"] = &ConfigSystem::isLoaded;
+		conf_ut["loadConfig"] = &ConfigSystem::loadConfig;
+		conf_ut["getConfigPtree"] = &ConfigSystem::getConfigPtree;
+		conf_ut["instance"] = &Singleton<ConfigSystem>::instance;
+
+		auto gfx_ut = state.new_usertype<GraphicsSystem>("GraphicsSystem", sol::no_constructor);
+		gfx_ut["getScreenInfo"] = &GraphicsSystem::getScreenInfo;
+		gfx_ut["loadTexture"] = &GraphicsSystem::loadTexture;
+		gfx_ut["drawTexture"] = &GraphicsSystem::drawTexture;
+		gfx_ut["setDrawColor"] = &GraphicsSystem::setDrawColor;
+		gfx_ut["resetDrawColor"] = &GraphicsSystem::resetDrawColor;
+		gfx_ut["drawRectangle"] = &GraphicsSystem::drawRectangle;
+		gfx_ut["getFontWidth"] = &GraphicsSystem::getFontWidth;
+		gfx_ut["getFontHeight"] = &GraphicsSystem::getFontHeight;
+		gfx_ut["drawText"] = &GraphicsSystem::drawText;
+		gfx_ut["drawLine"] = &GraphicsSystem::drawLine;
+		gfx_ut["drawPoint"] = &GraphicsSystem::drawPoint;
+		gfx_ut["getFPS"] = &GraphicsSystem::getFPS;
+		gfx_ut["delta"] = &GraphicsSystem::delta;
+		gfx_ut["setDrawingMode"] = &GraphicsSystem::setDrawingMode;
+		gfx_ut["getDrawingMode"] = &GraphicsSystem::getDrawingMode;
+		gfx_ut["pushDrawingMode"] = &GraphicsSystem::pushDrawingMode;
+		gfx_ut["popDrawingMode"] = &GraphicsSystem::popDrawingMode;
+		gfx_ut["pushViewMatrix"] = &GraphicsSystem::pushViewMatrix;
+		gfx_ut["popViewMatrix"] = &GraphicsSystem::popViewMatrix;
+		gfx_ut["translateView"] = &GraphicsSystem::translateView;
+		gfx_ut["rotateView"] = &GraphicsSystem::rotateView;
+		gfx_ut["scaleView"] = &GraphicsSystem::scaleView;
+		gfx_ut["drawPointArray"] = &GraphicsSystem::drawPointArray;
+		gfx_ut["createBufferTexture"] = &GraphicsSystem::createBufferTexture;
+		gfx_ut["drawToTexture"] = &GraphicsSystem::drawToTexture;
+		gfx_ut["clearToColor"] = &GraphicsSystem::clearToColor;
+		gfx_ut["setBlendingMode"] = &GraphicsSystem::setBlendingMode;
+		gfx_ut["useTexture"] = &GraphicsSystem::useTexture;
+		gfx_ut["setPointSize"] = &GraphicsSystem::setPointSize;
+		gfx_ut["saveTexture"] = &GraphicsSystem::saveTexture;
+		gfx_ut["freeTexture"] = &GraphicsSystem::freeTexture;
+		gfx_ut["instance"] = &Singleton<GraphicsSystem>::instance;
+		gfx_ut["TwoD"] = sol::var(GraphicsSystem::TwoD);
+		gfx_ut["ThreeD"] = sol::var(GraphicsSystem::ThreeD);
+		gfx_ut["Normal"] = sol::var(GraphicsSystem::Normal);
+		gfx_ut["Additive"] = sol::var(GraphicsSystem::Additive);
+
+		auto sc_ut = state.new_usertype<ScreenCoordinate>("ScreenCoordinate", sol::no_constructor);
+		sc_ut["x"] = sol::readonly(&ScreenCoordinate::x);
+		sc_ut["y"] = sol::readonly(&ScreenCoordinate::y);
+
+		auto in_ut = state.new_usertype<InputSystem>("InputSystem", sol::no_constructor);
+		in_ut["getKeyState"] = &InputSystem::getKeyState;
+		in_ut["getMousePosition"] = &InputSystem::getMousePosition;
+		in_ut["getMouseMotion"] = &InputSystem::getMouseMotion;
+		in_ut["getMouseButtonState"] = &InputSystem::getMouseButtonState;
+		in_ut["getMouseWheelScroll"] = &InputSystem::getMouseWheelScroll;
+		in_ut["instance"] = &Singleton<InputSystem>::instance;
+		in_ut["K_BACKSPACE"] = sol::var(SDLK_BACKSPACE);
+		in_ut["K_TAB"] = sol::var(SDLK_TAB);
+		in_ut["K_RETURN"] = sol::var(SDLK_RETURN);
+		in_ut["K_ESCAPE"] = sol::var(SDLK_ESCAPE);
+		in_ut["K_BACKSPACE"] = sol::var(SDLK_BACKSPACE);
+		in_ut["K_TAB"] = sol::var(SDLK_TAB);
+		in_ut["K_RETURN"] = sol::var(SDLK_RETURN);
+		in_ut["K_PAUSE"] = sol::var(SDLK_PAUSE);
+		in_ut["K_ESCAPE"] = sol::var(SDLK_ESCAPE);
+		in_ut["K_SPACE"] = sol::var(SDLK_SPACE);
+		in_ut["K_COMMA"] = sol::var(SDLK_COMMA);
+		in_ut["K_MINUS"] = sol::var(SDLK_MINUS);
+		in_ut["K_PERIOD"] = sol::var(SDLK_PERIOD);
+		in_ut["K_SLASH"] = sol::var(SDLK_SLASH);
+		in_ut["K_0"] = sol::var(SDLK_0);
+		in_ut["K_1"] = sol::var(SDLK_1);
+		in_ut["K_2"] = sol::var(SDLK_2);
+		in_ut["K_3"] = sol::var(SDLK_3);
+		in_ut["K_4"] = sol::var(SDLK_4);
+		in_ut["K_5"] = sol::var(SDLK_5);
+		in_ut["K_6"] = sol::var(SDLK_6);
+		in_ut["K_7"] = sol::var(SDLK_7);
+		in_ut["K_8"] = sol::var(SDLK_8);
+		in_ut["K_9"] = sol::var(SDLK_9);
+		in_ut["K_COLON"] = sol::var(SDLK_COLON);
+		in_ut["K_SEMICOLON"] = sol::var(SDLK_SEMICOLON);
+		in_ut["K_EQUALS"] = sol::var(SDLK_EQUALS);
+		in_ut["K_LEFTBRACKET"] = sol::var(SDLK_LEFTBRACKET);
+		in_ut["K_BACKSLASH"] = sol::var(SDLK_BACKSLASH);
+		in_ut["K_RIGHTBRACKET"] = sol::var(SDLK_RIGHTBRACKET);
+		in_ut["K_a"] = sol::var(SDLK_a);
+		in_ut["K_b"] = sol::var(SDLK_b);
+		in_ut["K_c"] = sol::var(SDLK_c);
+		in_ut["K_d"] = sol::var(SDLK_d);
+		in_ut["K_e"] = sol::var(SDLK_e);
+		in_ut["K_f"] = sol::var(SDLK_f);
+		in_ut["K_g"] = sol::var(SDLK_g);
+		in_ut["K_h"] = sol::var(SDLK_h);
+		in_ut["K_i"] = sol::var(SDLK_i);
+		in_ut["K_j"] = sol::var(SDLK_j);
+		in_ut["K_k"] = sol::var(SDLK_k);
+		in_ut["K_l"] = sol::var(SDLK_l);
+		in_ut["K_m"] = sol::var(SDLK_m);
+		in_ut["K_n"] = sol::var(SDLK_n);
+		in_ut["K_o"] = sol::var(SDLK_o);
+		in_ut["K_p"] = sol::var(SDLK_p);
+		in_ut["K_q"] = sol::var(SDLK_q);
+		in_ut["K_r"] = sol::var(SDLK_r);
+		in_ut["K_s"] = sol::var(SDLK_s);
+		in_ut["K_t"] = sol::var(SDLK_t);
+		in_ut["K_u"] = sol::var(SDLK_u);
+		in_ut["K_v"] = sol::var(SDLK_v);
+		in_ut["K_w"] = sol::var(SDLK_w);
+		in_ut["K_x"] = sol::var(SDLK_x);
+		in_ut["K_y"] = sol::var(SDLK_y);
+		in_ut["K_z"] = sol::var(SDLK_z);
+		in_ut["K_DELETE"] = sol::var(SDLK_DELETE);
+		in_ut["K_KP0"] = sol::var(SDLK_KP_0);
+		in_ut["K_KP1"] = sol::var(SDLK_KP_1);
+		in_ut["K_KP2"] = sol::var(SDLK_KP_2);
+		in_ut["K_KP3"] = sol::var(SDLK_KP_3);
+		in_ut["K_KP4"] = sol::var(SDLK_KP_4);
+		in_ut["K_KP5"] = sol::var(SDLK_KP_5);
+		in_ut["K_KP6"] = sol::var(SDLK_KP_6);
+		in_ut["K_KP7"] = sol::var(SDLK_KP_7);
+		in_ut["K_KP8"] = sol::var(SDLK_KP_8);
+		in_ut["K_KP9"] = sol::var(SDLK_KP_9);
+		in_ut["K_KP_PERIOD"] = sol::var(SDLK_KP_PERIOD);
+		in_ut["K_KP_DIVIDE"] = sol::var(SDLK_KP_DIVIDE);
+		in_ut["K_KP_MULTIPLY"] = sol::var(SDLK_KP_MULTIPLY);
+		in_ut["K_KP_MINUS"] = sol::var(SDLK_KP_MINUS);
+		in_ut["K_KP_PLUS"] = sol::var(SDLK_KP_PLUS);
+		in_ut["K_KP_ENTER"] = sol::var(SDLK_KP_ENTER);
+		in_ut["K_KP_EQUALS"] = sol::var(SDLK_KP_EQUALS);
+		in_ut["K_UP"] = sol::var(SDLK_UP);
+		in_ut["K_DOWN"] = sol::var(SDLK_DOWN);
+		in_ut["K_RIGHT"] = sol::var(SDLK_RIGHT);
+		in_ut["K_LEFT"] = sol::var(SDLK_LEFT);
+		in_ut["K_INSERT"] = sol::var(SDLK_INSERT);
+		in_ut["K_HOME"] = sol::var(SDLK_HOME);
+		in_ut["K_END"] = sol::var(SDLK_END);
+		in_ut["K_PAGEUP"] = sol::var(SDLK_PAGEUP);
+		in_ut["K_PAGEDOWN"] = sol::var(SDLK_PAGEDOWN);
+		in_ut["K_F1"] = sol::var(SDLK_F1);
+		in_ut["K_F2"] = sol::var(SDLK_F2);
+		in_ut["K_F3"] = sol::var(SDLK_F3);
+		in_ut["K_F4"] = sol::var(SDLK_F4);
+		in_ut["K_F5"] = sol::var(SDLK_F5);
+		in_ut["K_F6"] = sol::var(SDLK_F6);
+		in_ut["K_F7"] = sol::var(SDLK_F7);
+		in_ut["K_F8"] = sol::var(SDLK_F8);
+		in_ut["K_F9"] = sol::var(SDLK_F9);
+		in_ut["K_F10"] = sol::var(SDLK_F10);
+		in_ut["K_F11"] = sol::var(SDLK_F11);
+		in_ut["K_F12"] = sol::var(SDLK_F12);
+		in_ut["K_F13"] = sol::var(SDLK_F13);
+		in_ut["K_F14"] = sol::var(SDLK_F14);
+		in_ut["K_F15"] = sol::var(SDLK_F15);
+		in_ut["K_RSHIFT"] = sol::var(SDLK_RSHIFT);
+		in_ut["K_LSHIFT"] = sol::var(SDLK_LSHIFT);
+		in_ut["K_RCTRL"] = sol::var(SDLK_RCTRL);
+		in_ut["K_LCTRL"] = sol::var(SDLK_LCTRL);
+		in_ut["K_RALT"] = sol::var(SDLK_RALT);
+		in_ut["K_LALT"] = sol::var(SDLK_LALT);
+		in_ut["K_LSUPER"] = sol::var(SDLK_OPER);
+		in_ut["K_RSUPER"] = sol::var(SDLK_OPER);
+		in_ut["K_SYSREQ"] = sol::var(SDLK_SYSREQ);
+		in_ut["K_MENU"] = sol::var(SDLK_MENU);
+		in_ut["K_POWER"] = sol::var(SDLK_POWER);
+		in_ut["up"] = sol::var(InputSystem::Up);
+		in_ut["released"] = sol::var(InputSystem::Released);
+		in_ut["pressed"] = sol::var(InputSystem::Pressed);
+		in_ut["down"] = sol::var(InputSystem::Down);
+
 	}
-	
 };

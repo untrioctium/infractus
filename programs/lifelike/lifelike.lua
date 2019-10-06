@@ -1,8 +1,4 @@
-class 'LifeLike' (InfractusProgram)
-
-function LifeLike:__init()
-	InfractusProgram.__init(self)
-end
+LifeLike = {}
 
 function LifeLike:setRule( name )
 	self.rules.birth = self:computeRule(self.ruleTable[name].birth)
@@ -29,12 +25,12 @@ function LifeLike:init(interactive, width, height)
 	self.bufferStorage = self.engine:fromTexture( self:getBufferTexture() )
 	
 	self.convolve = Program()
-	self.convolve.out = self.engine:fromTexture( GraphicsSystem.instance():createBufferTexture(2560,1440) )
+	self.convolve_out = self.engine:fromTexture( GraphicsSystem.instance():createBufferTexture(2560,1440) )
 	self.convolve:setWorkingDirectory("./programs/")
 	self.convolve:load("convolve.program");
 	self.convolve:bindEngine(self.engine);
 	self.convolve:setStorage( Program.input, 0, self.bufferStorage )
-	self.convolve:setStorage( Program.output, 0, self.convolve.out )
+	self.convolve:setStorage( Program.output, 0, self.convolve_out )
 	self.kernel = {1, 1, 1, 1, 1, 1, 1, 1, 1}
 	
 	self.ruleTable = {}
@@ -72,11 +68,11 @@ function LifeLike:init(interactive, width, height)
 	
 	for k,v in pairs(rules:children()) do
 		local rule = {}
-		rule.live = v.second:get("<xmlattr>.survival")
-		rule.birth = v.second:get("<xmlattr>.birth")
-		rule.deathStates = tonumber(v.second:get("<xmlattr>.death_states"))
-		rule.goodRandom = tonumber(v.second:get("<xmlattr>.good_random"))
-		self.ruleTable[v.second:get("<xmlattr>.name")] = rule
+		rule.live = v:get("<xmlattr>.survival")
+		rule.birth = v:get("<xmlattr>.birth")
+		rule.deathStates = tonumber(v:get("<xmlattr>.death_states"))
+		rule.goodRandom = tonumber(v:get("<xmlattr>.good_random"))
+		self.ruleTable[v:get("<xmlattr>.name")] = rule
 	end
 	
 	self:setRule("coral")
@@ -120,7 +116,7 @@ function LifeLike:getOutput()
 	end
 
 	self.convolve:run()
-	return self.convolve.out:toTexture()
+	return self.convolve_out:toTexture()
 end
 
 function LifeLike:input()
@@ -161,8 +157,4 @@ function LifeLike:run(dt)
 	self.compute:swapInputOutput(0)
 end
 
-function getProgram()
-	self = LifeLike()
-	return self
-end
-
+return LifeLike;

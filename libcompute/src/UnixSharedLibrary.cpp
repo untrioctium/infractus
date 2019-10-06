@@ -1,5 +1,6 @@
 #include "libcompute.hpp"
-#include <windows.h>
+#include <dlfcn.h>
+#include <iostream>
 
 namespace libcompute
 {
@@ -7,15 +8,13 @@ namespace libcompute
 class UnixSharedLibrary : public SharedLibrary
 {
 public:
-	UnixSharedLibrary(const std::string& name)
-		throw (SharedLibraryException);
+	UnixSharedLibrary(const std::string& name);
 	~UnixSharedLibrary();
 
-	void* findSymbol(const char* name)
-		throw (SharedLibraryException);
+	void* findSymbol(const char* name);
 
 private:
-	HINSTANCE handle_;
+	void* handle_;
 };
 
 };
@@ -23,34 +22,35 @@ private:
 using namespace libcompute;
 
 SharedLibrary* SharedLibrary::openSharedLibrary(const std::string& name)
-	throw (SharedLibraryException)
 {
 	return new UnixSharedLibrary(name);
 }
 
 UnixSharedLibrary::UnixSharedLibrary(const std::string& name)
-	throw (SharedLibraryException)
 	: handle_(0)
 {
-	UINT emode = SetErrorMode(SEM_FAILCRITICALERRORS);
-	std::string fullName = "plugins\\" + name + "\\plugin.dll";
-	handle_ = LoadLibrary(fullName.c_str());
-	SetErrorMode(emode);
+	std::string fullName = "plugins/" + name + "/plugin.so";
+	handle_ = dlopen(fullName.c_str(),RTLD_NOW|RTLD_GLOBAL);
 	if (handle_ == 0)
 	{
-		//const char* s = dlerror();
-		throw SharedLibraryException("Exact Error Not Reported");
+		const char* s = dlerror();
+		std::cout << s << std::endl;
+		throw SharedLibraryException(s?s:"Exact Error Not Reported");
 	}
 }
 
-UnixSharedLibrary::~UnixSharedLibrary() { FreeLibrary(handle_); }
+UnixSharedLibrary::~UnixSharedLibrary() { dlclose(handle_); }
 
 void* UnixSharedLibrary::findSymbol(const char* name)
-	throw (SharedLibraryException)
 {
-	void* sym = (void*) GetProcAddress(handle_,name);
+	void* sym = dlsym(handle_,name);
 	if (sym == 0)
-		throw SharedLibraryException("Symbol Not Found");
+{
+			const char* s = dlerror();
+		std::cout << s << std::endl;
+				throw SharedLibraryException("Symbol Not Found");
+}
+
 	else
 		return sym;
 }

@@ -1,4 +1,4 @@
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 //#include <SDL_console/SDL_console.h>
 #include <GL/glew.h>
 #include <stdio.h>
@@ -21,6 +21,8 @@
 #include "Infractus.hpp"
 #include <libcompute.hpp>
 
+#include <iostream>
+
 //#include "InfractusConsole.hpp"
 
 using namespace std;
@@ -35,6 +37,8 @@ Infractus::~Infractus()
 	delete fileSystem;
 	delete loggingSystem;
 }
+
+
 
 bool Infractus::init( int argc, char** argv )
 {
@@ -102,21 +106,6 @@ bool Infractus::init( int argc, char** argv )
 		program = programManager->createInstance((argc > 1)? argv[1]: "Pickover");
 		program->init(false, screenInfo.w, screenInfo.h);
 	}
-	catch( InfractusProgramException& e )
-	{
-		printf("%s\n", boost::get_error_info<InfractusProgramException::errorString>(e)->c_str());
-		return false;
-	}
-	catch( libcompute::SharedLibraryException& e )
-	{
-		printf("%s\n", e.getError());
-		return false;
-	}
-	catch( boost::exception& e )
-	{
-		printf("%s\n", boost::diagnostic_information(e).c_str());
-		return false;
-	}
 	catch( std::exception& e )
 	{
 		printf("%s\n", e.what());
@@ -154,8 +143,6 @@ void saveFrame( Texture tex, int frame )
 	std::string path = temp;
 	Singleton<GraphicsSystem>::instance().saveTexture( tex, path );
 	
-	char command[1024];
-	
 	if( frame % 25 == 0 )
 	{
 		system("mogrify -format jpg -flip -quality 100 ./frames/*.pbm; rm ./frames/*.pbm");
@@ -167,21 +154,7 @@ int Infractus::run()
 {
 	ScreenInfo screenInfo = graphicsSystem->getScreenInfo();
 
-	#define PROGRAM_TRY_CATCH( name, code ) \
-		try\
-		{\
-			code;\
-		}\
-		catch( InfractusProgramException& e )\
-		{\
-			printf("Error in \"" name "\": %s\n", boost::get_error_info<InfractusProgramException::errorString>(e)->c_str());\
-			return 1;\
-		}\
-		catch( libcompute::libcomputeException& e )\
-		{\
-			printf("Error in \"" name "\": %s\n", boost::diagnostic_information(e).c_str());\
-			return 1;\
-		}
+	#define PROGRAM_TRY_CATCH( name, code ) code;
 
 	//InfractusProgram* deform = programManager->createInstance("Deform");
 	//deform->init( false, screenInfo.w, screenInfo.h );

@@ -12,7 +12,6 @@ void InputSystem::init()
 	}
 
 	SDL_ShowCursor(SDL_ENABLE);
-	SDL_EnableUNICODE(SDL_ENABLE);
 	//SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 
 	Singleton<LoggingSystem>::instance().writeLog( LoggingSystem::Info, "Input system initalized." );
@@ -39,6 +38,7 @@ void InputSystem::queueInputEvents()
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEWHEEL:
 		case SDL_JOYAXISMOTION:
 		case SDL_JOYBALLMOTION:
 		case SDL_JOYHATMOTION:
@@ -116,15 +116,11 @@ void InputSystem::processInputQueue()
 			case SDL_BUTTON_RIGHT:
 				keyStates[-2] = Pressed;
 				break;
-
-			case SDL_BUTTON_WHEELDOWN:
-				wheelScroll += -1;
-				break;
-
-			case SDL_BUTTON_WHEELUP:
-				wheelScroll += 1;
-				break;
 			}
+			break;
+
+		case SDL_MOUSEWHEEL:
+			wheelScroll += e->wheel.x + e->wheel.y;
 			break;
 
 		case SDL_MOUSEBUTTONUP:

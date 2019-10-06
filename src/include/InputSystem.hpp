@@ -1,4 +1,4 @@
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 /// A small structure that refers to a coordinate on the screen.
 struct ScreenCoordinate
@@ -99,7 +99,7 @@ public:
 	 * @param key The key to check.
 	 * @return The state of the key.
 	 */
-	ButtonState getKeyState( SDLKey key ) {if( keyStates.find(key) == keyStates.end() ) return Up; return keyStates[key]; }
+	ButtonState getKeyState( SDL_Keycode key ) {if( keyStates.find(key) == keyStates.end() ) return Up; return keyStates[key]; }
 
 	/**
 	 * @brief Returns an iterator to the beginning of the input event queue.

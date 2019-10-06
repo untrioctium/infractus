@@ -2,7 +2,6 @@
 #define LIBCOMPUTE_PARAMETER_HPP
 
 #include <boost/bimap.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace libcompute
 {
@@ -10,7 +9,7 @@ namespace libcompute
 class Program;
 
 /** Class that wraps getting and setting parameters in a safe and easy way */
-class __attribute__ ((dllexport)) Parameter
+class Parameter
 {
 public:
 
@@ -37,7 +36,7 @@ public:
 	 * @return The resulting ParameterType.
 	 * @throw UnknownTypeException The parameter type name does not match any supported types.
 	 */
-	static ParameterType typeFromName( const std::string& name ) throw(UnknownTypeException);
+	static ParameterType typeFromName( const std::string& name );
 
 	/**
 	 * @brief Gets a string representation of a ParameterType
@@ -45,7 +44,7 @@ public:
 	 * @return A string representing the parameter type. 
 	 * @throw UnknownTypeException The ParameterType is invalid.
 	 */
-	static std::string nameFromType( ParameterType type ) throw(UnknownTypeException);
+	static std::string nameFromType( ParameterType type );
 
 	/** Frees any memory owned by this Parameter */
 	~Parameter();
@@ -69,7 +68,7 @@ public:
 	 * valid \a index will be 0.  It's not reccomended size one parameters are ever accessed this way
 	 * because the overhead is larger than just accessing the value directly.
 	 */
-	Parameter operator[]( unsigned int index ) throw( IndexOutOfRangeException );
+	Parameter operator[]( unsigned int index );
 
 	/**
 	 * @brief Get the int value of this parameter.
@@ -79,7 +78,7 @@ public:
 	 *
 	 * If the type of this Parameter is float, a conversion to int will be made.
 	 */
-	operator int() throw(InvalidParameterCastException);
+	operator int();
 
 	/**
 	 * @brief Get the float value of this parameter.
@@ -89,7 +88,7 @@ public:
 	 *
 	 * If the type of this Parameter is int, a conversion to float will be made.
 	 */
-	operator float() throw(InvalidParameterCastException);
+	operator float();
 
 	/**
 	 * @brief Get the a reference to the vec2 value of this parameter.
@@ -97,7 +96,7 @@ public:
 	 * @throw InvalidParameterCastException The type of this parameter is not
 	 *                             compatible with a conversion to a vec2.
 	 */
-	operator vec2&() throw(InvalidParameterCastException);
+	operator vec2&();
 
 	/**
 	 * @brief Get the a reference to the vec3 value of this parameter.
@@ -105,7 +104,7 @@ public:
 	 * @throw InvalidParameterCastException The type of this parameter is not
 	 *                             compatible with a conversion to a vec3.
 	 */
-	operator vec3&() throw(InvalidParameterCastException);
+	operator vec3&();
 
 	/**
 	 * @brief Get the a reference to the vec4 value of this parameter.
@@ -113,10 +112,10 @@ public:
 	 * @throw InvalidParameterCastException The type of this parameter is not
 	 *                             compatible with a conversion to a vec4.
 	 */
-	operator vec4&() throw(InvalidParameterCastException);
+	operator vec4&();
 	
-	operator mat3&() throw(InvalidParameterCastException);
-	operator mat4&() throw(InvalidParameterCastException);
+	operator mat3&();
+	operator mat4&();
 	
 	/**
 	 * @brief Get a int* to the value of this parameter.
@@ -127,7 +126,7 @@ public:
 	 * Use this sparingly and with good reason, as no index checking
 	 * is performed on straight pointer arrays.
 	 */
-	operator int*() throw(InvalidParameterCastException);
+	operator int*();
 
 	/**
 	 * @brief Get a float* to the value of this parameter.
@@ -138,7 +137,7 @@ public:
 	 * Use this sparingly and with good reason, as no index checking
 	 * is performed on straight pointer arrays.
 	 */
-	operator float*() throw(InvalidParameterCastException);
+	operator float*();
 
 	/**
 	 * @brief Get a vec2* to the value of this parameter.
@@ -149,7 +148,7 @@ public:
 	 * Use this sparingly and with good reason, as no index checking
 	 * is performed on straight pointer arrays.
 	 */
-	operator vec2*() throw(InvalidParameterCastException);
+	operator vec2*();
 
 	/**
 	 * @brief Get a vec3* to the value of this parameter.
@@ -160,7 +159,7 @@ public:
 	 * Use this sparingly and with good reason, as no index checking
 	 * is performed on straight pointer arrays.
 	 */
-	operator vec3*() throw(InvalidParameterCastException);
+	operator vec3*();
 
 	/**
 	 * @brief Get a vec4* to the value of this parameter.
@@ -171,10 +170,10 @@ public:
 	 * Use this sparingly and with good reason, as no index checking
 	 * is performed on straight pointer arrays.
 	 */
-	operator vec4*() throw(InvalidParameterCastException);
+	operator vec4*();
 
-	operator mat3*() throw(InvalidParameterCastException);
-	operator mat4*() throw(InvalidParameterCastException);
+	operator mat3*();
+	operator mat4*();
 	
 	/**
 	 * @brief Syntactic sugar for getting a vec2 reference from this parameter.
@@ -191,7 +190,7 @@ public:
 	 *	vec2& refTwo = someParameter; // ...as this is all you need to get a reference
 	 * @endcode	
 	 */
-	vec2& vec2Ref() throw(InvalidParameterCastException) { return (vec2&)(*this); }
+	vec2& vec2Ref() { return (vec2&)(*this); }
 
 	/**
 	 * @brief Syntactic sugar for getting a vec3 reference from this parameter.
@@ -201,7 +200,7 @@ public:
 	 *
 	 * See the vec2Ref() method for additional usage details.
 	 */
-	vec3& vec3Ref() throw(InvalidParameterCastException) { return (vec3&)(*this); }
+	vec3& vec3Ref() { return (vec3&)(*this); }
 
 	/**
 	 * @brief Syntactic sugar for getting a vec4 reference from this parameter.
@@ -211,18 +210,18 @@ public:
 	 *
 	 * See the vec2Ref() method for additional usage details.
 	 */
-	vec4& vec4Ref() throw(InvalidParameterCastException) { return (vec4&)(*this); }
+	vec4& vec4Ref() { return (vec4&)(*this); }
 	
-	mat3& mat3Ref() throw(InvalidParameterCastException) { return (mat3&)(*this); }
-	mat4& mat4Ref() throw(InvalidParameterCastException) { return (mat4&)(*this); }
+	mat3& mat3Ref() { return (mat3&)(*this); }
+	mat4& mat4Ref() { return (mat4&)(*this); }
 
-	void operator=( const int& ) throw(InvalidParameterCastException);
-	void operator=( const float& ) throw(InvalidParameterCastException);
-	void operator=( const vec2& ) throw(InvalidParameterCastException);
-	void operator=( const vec3& ) throw(InvalidParameterCastException);
-	void operator=( const vec4& ) throw(InvalidParameterCastException);
-	void operator=( const mat3& ) throw(InvalidParameterCastException);
-	void operator=( const mat4& ) throw(InvalidParameterCastException);
+	void operator=( const int& );
+	void operator=( const float& );
+	void operator=( const vec2& );
+	void operator=( const vec3& );
+	void operator=( const vec4& );
+	void operator=( const mat3& );
+	void operator=( const mat4& );
 	
 	/** Get the type of the Parameter */
 	ParameterType type() { return type_; }

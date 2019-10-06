@@ -1,7 +1,7 @@
 OBJS = Engine.o Parameter.o Plugin.o Program.o ProgramDataTypes.o UnixSharedLibrary.o
 
 HEADERDIR = include/libcompute
-HEADERS = include/libcompute.hpp $(HEADERDIR)/Engine.hpp $(HEADERDIR)/Exceptions.hpp $(HEADERDIR)/Parameter.hpp \
+HEADERS = include/libcompute.hpp $(HEADERDIR)/Engine.hpp $(HEADERDIR)/Parameter.hpp \
 		  $(HEADERDIR)/Plugin.hpp $(HEADERDIR)/Program.hpp $(HEADERDIR)/ProgramDataTypes.hpp $(HEADERDIR)/SharedLibrary.hpp
 
 SRCPATH = src
@@ -10,10 +10,10 @@ LIBNAME = libcompute
 VERSION = 1.0.1
 LIBPATH = lib
 
-CC = g++
+CC = clang
 DEBUG = -g
-CFLAGS = -Wall -I./include -c -fPIC $(DEBUG)
-LFLAGS = -Wall --shared -Wl,--out-implib,$(LIBPATH)/$(LIBNAME).a $(DEBUG) -o $(LIBPATH)/$(LIBNAME).dll
+CFLAGS = -Wall -I./include -c -fPIC --std=c++2a $(DEBUG)
+LFLAGS = -Wall --shared -Wl,--out-implib,$(LIBPATH)/$(LIBNAME).a $(DEBUG) -o $(LIBPATH)/$(LIBNAME).so
 
 
 libcompute: $(OBJS) $(HEADERS)

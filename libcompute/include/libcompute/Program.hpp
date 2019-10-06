@@ -7,7 +7,7 @@ namespace libcompute
 {
 
 /** Class that abstracts running computations on various computational platforms. */
-class __attribute__ ((dllexport)) Program
+class Program
 {
 public:
 
@@ -58,7 +58,7 @@ public:
 	 * @return A reference to the stored Parameter.
 	 * @throw UnknownParameterException The Parameter could not be found.
 	 */
-	Parameter& getParameter( const std::string& name ) throw(UnknownParameterException);
+	Parameter& getParameter( const std::string& name );
 
 	/** The std::map type used to store the parameters */
 	typedef std::map<std::string, Parameter> parameter_storage;
@@ -96,8 +96,7 @@ public:
 	 * @throw MalformedParameterNameException The \a name argument is not a valid Parameter name.
 	 * @throw ParameterAlreadyExistsException The parameter already exists.
 	 */
-	void addParameter( const std::string& name, Parameter::ParameterType type ) 
-		throw( EngineCurrentlyBoundException, MalformedParameterNameException, ParameterAlreadyExistsException );
+	void addParameter( const std::string& name, Parameter::ParameterType type );
 
 	/**
 	 * @brief Adds a new Parameter array to this Program.
@@ -109,8 +108,7 @@ public:
 	 * @throw InvalidSizeException The \a size argument was equal to zero.
 	 * @throw ParameterAlreadyExistsException The parameter already exists.
 	 */	
-	void addParameterArray( const std::string& name, Parameter::ParameterType type, unsigned int size )
-		throw( EngineCurrentlyBoundException, MalformedParameterNameException, InvalidSizeException, ParameterAlreadyExistsException );
+	void addParameterArray( const std::string& name, Parameter::ParameterType type, unsigned int size );
 
 	/**
 	 * @brief Removes a Parameter with the given name.
@@ -118,8 +116,7 @@ public:
 	 * @throw EngineCurrentlyBoundException A Parameter was being removed while an engine was bound.
 	 * @throw UnknownParameterException The Parameter could not be found.
 	 */
-	void removeParameter( const std::string& name )
-		throw( EngineCurrentlyBoundException, UnknownParameterException );
+	void removeParameter( const std::string& name );
 
 	/**
 	 * @brief Checks to see if a Parameter exists.
@@ -138,14 +135,14 @@ public:
 	 * @brief Gets a pointer to the Engine currently bound to this Program.
 	 * @throw NoEngineBoundException There is currently no engine bound to this Program.
 	 */
-	Engine* getBoundEngine() const throw( NoEngineBoundException );
+	Engine* getBoundEngine() const;
 
 	/**
 	 * @brief Binds a Engine to this Program.
 	 * @param engine The engine to bind.
 	 * @throw EngineCurrentlyBoundException There is already an engine bound to this Program.
 	 */
-	void bindEngine( Engine* engine ) throw( EngineCurrentlyBoundException );
+	void bindEngine( Engine* engine );
 	
 	void unbindEngine() { boundEngine_->unbindProgram(this); boundEngine_ = NULL; }
 	
@@ -162,7 +159,7 @@ public:
 	 * @return A ProgramLocation indicating the program's location type.
 	 * @throw EngineNotSupportedException The specified engine does not have a program.
 	 */
-	ProgramLocation getProgramLocationType( const std::string& engine ) const throw( EngineNotSupportedException );
+	ProgramLocation getProgramLocationType( const std::string& engine ) const;
 	
 	/**
 	 * @brief Sets the location of a program for an engine as a file.
@@ -185,7 +182,7 @@ public:
 	 * the one specified.  See the documentation for each engine to find out what
 	 * type it expects \a program to be.
 	 */
-	void setProgramLocationMemory( const std::string& engine, boost::any program );
+	void setProgramLocationMemory( const std::string& engine, std::any program );
 
 	/**
 	 * @brief Gets the file path of a program for a engine.
@@ -194,8 +191,7 @@ public:
 	 * @throw ProgramLocationTypeMismatchException The program location is in memory.
 	 * @throw EngineNotSupportedException The specified engine does not have a program.
 	 */
-	std::string getProgramLocationFile( const std::string& engine )
-		throw( ProgramLocationTypeMismatchException, EngineNotSupportedException );
+	std::string getProgramLocationFile( const std::string& engine );
 
 	/**
 	 * @brief Gets the program in memory for a engine.
@@ -204,8 +200,7 @@ public:
 	 * @throw ProgramLocationTypeMismatchException The program location is a file.
 	 * @throw EngineNotSupportedException The specified engine does not have a program.
 	 */
-	boost::any getProgramLocationMemory( const std::string& engine )
-		throw( ProgramLocationTypeMismatchException, EngineNotSupportedException );
+	std::any getProgramLocationMemory( const std::string& engine );
 
 	/**
 	 * @brief Gets the program that is used by the bound engine.
@@ -214,13 +209,13 @@ public:
 	 * This function is only of interest to Engine developers; a normal end-user
 	 * has no need for this function.
 	 */
-	void* getActiveProgram() throw( NoEngineBoundException );
+	void* getActiveProgram();
 
 	/**
 	 * @brief Runs this program in the bound engine.
 	 * @throw NoEngineBoundException There is currently no engine bound to this Program.
 	 */
-	void run() throw( NoEngineBoundException );
+	void run();
 
 	/**
 	 * @brief Allocates storage for the program through the currently bound engine.
@@ -230,8 +225,7 @@ public:
 	 * @throw NoEngineBoundException There is currently no engine bound to this Program.
 	 * @throw InvalidSizeException The \a width and/or \a height argument was equal to zero.
 	 */
-	void allocateStorage( unsigned int width, unsigned int height, StorageLocation location, unsigned int index )
-		throw( NoEngineBoundException, InvalidSizeException );
+	void allocateStorage( unsigned int width, unsigned int height, StorageLocation location, unsigned int index );
 
 	/**
 	 * @brief Gets the storage at the specified location.
@@ -239,8 +233,7 @@ public:
 	 * @return The specified storage.
 	 * @throw NoStorageAllocatedException There is no storage in this location.
 	 */
-	Engine::DataStorage::Ptr getStorage( StorageLocation location, unsigned int index )
-		throw( NoStorageAllocatedException );
+	Engine::DataStorage::Ptr getStorage( StorageLocation location, unsigned int index );
 
 	/**
 	 * @brief Sets the storage at the specified location.
@@ -268,7 +261,7 @@ private:
 
 	std::map<std::string, Parameter> parameters_;
 
-	std::map<std::string, std::pair<ProgramLocation, boost::any> > supportedEngines_;
+	std::map<std::string, std::pair<ProgramLocation, std::any> > supportedEngines_;
 	Engine* boundEngine_;
 
 	void* activeProgram_;

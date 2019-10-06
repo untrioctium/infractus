@@ -1,4 +1,4 @@
-class 'Pickover' (InfractusProgram)
+Pickover = {}
 
 function draw_status( ... )
 	local graphicsSystem = GraphicsSystem.instance()
@@ -33,10 +33,6 @@ end
 
 --this = 0
 
-function Pickover:__init()
-	InfractusProgram.__init(self)
-end
-
 function Pickover:loadAttractors()
 	self.attractors = {}
 
@@ -47,12 +43,12 @@ function Pickover:loadAttractors()
 	for k,v in pairs(attractors:children()) do
 		local attractor = {}
 		
-		attractor.code = v.second:get("code")
+		attractor.code = v:get("code")
 		
 		attractor.parameters = {}
 		
-		for i,p in pairs(v.second:getChild("parameters"):children()) do
-			local info = p.second:getChild("<xmlattr>")
+		for i,p in pairs(v:getChild("parameters"):children()) do
+			local info = p:getChild("<xmlattr>")
 			local parameter = {}
 			parameter.name = info:get("name")
 			parameter.index = i-1
@@ -61,7 +57,7 @@ function Pickover:loadAttractors()
 			attractor.parameters[parameter.name] = parameter
 		end
 		
-		self.attractors[v.second:get("<xmlattr>.name")] = attractor
+		self.attractors[v:get("<xmlattr>.name")] = attractor
 	end
 end
 
@@ -163,7 +159,7 @@ function Pickover:init( interactive )
 	self.escapeRadius = 10
 	self.preGamma = 1.75
 	self.postGamma = 1
-	self.alpha = .95
+	self.alpha = .25
 	self.exposure = 1
 	self.blitAlpha = 1
 	self.lenPow = 1
@@ -192,21 +188,21 @@ function Pickover:init( interactive )
 	self.bufferStorage = self.engine:fromTexture( self:getBufferTexture() )
 	
 	self.convolve = Program()
-	self.convolve.out = self.engine:fromTexture( graphicsSystem:createBufferTexture(0,0) )
+	self.convolve_out = self.engine:fromTexture( graphicsSystem:createBufferTexture(0,0) )
 	self.convolve:setWorkingDirectory("./programs/")
 	self.convolve:load("convolve.program");
 	self.convolve:bindEngine(self.engine);
 	self.convolve:setStorage( Program.input, 0, self.bufferStorage )
-	self.convolve:setStorage( Program.output, 0, self.convolve.out )
-	self.convolve.kernel = {1,2,1,2,4,2,1,2,1} -- gaussian kernel
+	self.convolve:setStorage( Program.output, 0, self.convolve_out )
+	self.convolve_kernel = {1,2,1,2,4,2,1,2,1} -- gaussian kernel
 	
 	self.tonemap = Program();
-	self.tonemap.out = self.engine:fromTexture( graphicsSystem:createBufferTexture(0,0) )
+	self.tonemap_out = self.engine:fromTexture( graphicsSystem:createBufferTexture(0,0) )
 	self.tonemap:setWorkingDirectory("./programs/")
 	self.tonemap:load("tonemap.program")
 	self.tonemap:bindEngine(self.engine)
 	self.tonemap:setStorage( Program.input, 0, self.bufferStorage )
-	self.tonemap:setStorage( Program.output, 0, self.tonemap.out )	
+	self.tonemap:setStorage( Program.output, 0, self.tonemap_out )	
 	self.brightAvg = 5
 	self.brightWeight = .005
 	
@@ -360,7 +356,7 @@ function Pickover:getOutput()
 		self.convolve:setStorage( Program.input, 0, self.bufferStorage )
 		convolveKernel = self.convolve:getParameter("convolveKernel")
 		for i=1,9 do
-			convolveKernel:at(i-1):setFloat(self.convolve.kernel[i])
+			convolveKernel:at(i-1):setFloat(self.convolve_kernel[i])
 		end
 
 		self.convolve:run()
@@ -370,7 +366,7 @@ function Pickover:getOutput()
 		graphicsSystem:drawToTexture( self:getBufferTexture()  )
 		graphicsSystem:setDrawColor( Color( 1.0, 1.0, 1.0, self.blitAlpha ) )
 		graphicsSystem:setBlendingMode( GraphicsSystem.Additive )
-		graphicsSystem:useTexture( self.convolve.out:toTexture() )
+		graphicsSystem:useTexture( self.convolve_out:toTexture() )
 		graphicsSystem:drawRectangle( Point(0,screenInfo.h), Point(screenInfo.w, 0) )
 		graphicsSystem:useTexture( Texture() )
 		graphicsSystem:setBlendingMode( GraphicsSystem.Normal )
@@ -402,7 +398,7 @@ function Pickover:getOutput()
 		graphicsSystem:drawToTexture( self:getBufferTexture()  )
 		graphicsSystem:clearToColor(Color(0.0, 0.0, 0.0, 0.0))
 		graphicsSystem:resetDrawColor()
-		graphicsSystem:useTexture( self.tonemap.out:toTexture() )
+		graphicsSystem:useTexture( self.tonemap_out:toTexture() )
 		graphicsSystem:drawRectangle( Point(0,screenInfo.h), Point(screenInfo.w, 0) )
 		graphicsSystem:useTexture( Texture() )
 		graphicsSystem:drawToTexture( Texture() )
@@ -436,7 +432,4 @@ function Pickover:getOutput()
 	return self:getBufferTexture()
 end
 
-function getProgram()
-	self = Pickover()
-	return self
-end
+return Pickover

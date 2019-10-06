@@ -1,3 +1,4 @@
+#include <any>
 #include <libcompute.hpp>
 using namespace libcompute;
 
@@ -18,11 +19,7 @@ void checkGLErrors(const char *label) {
     const GLubyte *errStr;
     if ((errCode = glGetError()) != GL_NO_ERROR) {
         errStr = gluErrorString(errCode);
-        printf("OpenGL ERROR: ");
-        printf((char*)errStr);
-        printf("(Label: ");
-        printf(label);
-        printf(")\n.");
+        printf("OpenGL ERROR: %s (Label: %s)\n", (char*)errStr, label);
     }
 }
 
@@ -31,14 +28,14 @@ class GLSLComputeEngine: public Engine
 public:
 
 	GLSLComputeEngine() : Engine( "GLSLComputeEngine") { init(); }
-	~GLSLComputeEngine() {}
+	~GLSLComputeEngine() {};
 
 	class DataStorage: public Engine::DataStorage
 	{
 	public:
 		~DataStorage()
 		{
-			GLuint texture = boost::any_cast<GLuint>(getDataStorage());
+			GLuint texture = getDataStorage();
 			glDeleteTextures(1, &texture);
 		}
 		
@@ -46,7 +43,7 @@ public:
 
 		void fromArray( void* array )
 		{
-			GLuint texture = boost::any_cast<GLuint>(getDataStorage());
+			GLuint texture = getDataStorage();
 			DataStorage::Info info = getInfo();
 			GLuint format[2];
 
@@ -61,7 +58,7 @@ public:
 
 		void toArray( void* array )
 		{
-			GLuint texture = boost::any_cast<GLuint>(getDataStorage());
+			GLuint texture = getDataStorage();
 			DataStorage::Info info = getInfo();
 
 			GLuint format[2];
@@ -214,7 +211,7 @@ vec4 GLSLComputeEngine::reduce( const Engine::DataStorage::Ptr& storage, Engine:
 	saveOpenGLStateAndSetup();
 	glViewport(0,0,width,height);
 	
-	GLuint input = boost::any_cast<GLuint>(storage->getDataStorage());
+	GLuint input = storage->getDataStorage();
 	
 	int inTex = 0;
 
@@ -363,7 +360,7 @@ void* GLSLComputeEngine::bindProgram( Program* const program )
 	if( program->getProgramLocationType(engineName) == Program::File )
 		programSource = readFile( program->getProgramLocationFile(engineName), true );		
 	else
-		programSource = boost::any_cast<std::string>( program->getProgramLocationMemory(engineName) );
+		programSource = std::any_cast<std::string>( program->getProgramLocationMemory(engineName) );
 	// process the includes
 	for( size_t includePos = programSource.find("#pragma include <");
 		includePos != std::string::npos; includePos = programSource.find("#pragma include <") )
@@ -377,17 +374,9 @@ void* GLSLComputeEngine::bindProgram( Program* const program )
 		programSource.insert( includePos, includeSrc );		
 	}
 
-	programSource = "#version 140\n" + uniformDeclarations + programSource + "\n";
+	programSource = "#version 130\n" + uniformDeclarations + programSource + "\n";
 	const char* src = programSource.c_str();
 	printf("%s\n", src);
-	
-	char dumpName[64];
-	sprintf(dumpName, "./dump.%d.frag", rand());
-	
-	FILE* dump = fopen(dumpName, "w+");
-	fwrite(src, programSource.size(), 1, dump);
-	fclose(dump);
-	
 	
 	GLuint* programData = new GLuint[2];
 
@@ -474,7 +463,7 @@ std::string engineName = this->pluginName();
 			texArray[i] = i;
 			glActiveTextureARB( GL_TEXTURE0_ARB + i );
 			glBindTexture(GL_TEXTURE_2D, 
-				boost::any_cast<GLuint>(program->getStorage(Program::Input, i)->getDataStorage()));
+				std::any_cast<GLuint>(program->getStorage(Program::Input, i)->getDataStorage()));
 		}
 		glUniform1iv( uniformCache[shaderProgram]["intex"], count, texArray );
 	}
@@ -495,7 +484,7 @@ std::string engineName = this->pluginName();
 	for( int i = 0; i < count; i++ )
 	{
 		glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, 
-			boost::any_cast<GLuint>(program->getStorage(Program::Output, i)->getDataStorage()), 0);
+			std::any_cast<GLuint>(program->getStorage(Program::Output, i)->getDataStorage()), 0);
 		renderTargets[i] = GL_COLOR_ATTACHMENT0_EXT + i;
 	}
 	
@@ -609,7 +598,7 @@ void GLSLComputeEngine::dataTypeToGLFormat( const Engine::DataStorage::Info& typ
 
 extern "C" 
 {
-	__attribute__ ((dllexport)) Plugin* plugin_init()
+	Plugin* plugin_init()
 	{
 		return new GLSLComputeEngine;
 	}

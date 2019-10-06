@@ -29,12 +29,6 @@
 		.def("set", &Array1D<vec##V_D<V_T> >::set)\
 		.def("array", &Array1D<vec##V_D<V_T> >::array)
 
-void translateLibcomputeException(lua_State* L, libcomputeException const& e)
-{
-	std::string finalError = boost::diagnostic_information(e);
-	lua_pushstring(L, finalError.c_str());
-}
-
 int handleErrors( lua_State* L )
 {
 	lua_Debug d;
@@ -109,20 +103,20 @@ template<typename T> VoidWrapper createVoidWrapper( Array1D<T>* const array )
 	return VoidWrapper( (void*) array->array() );
 }
 
-void dataStorageCopyToArray( Engine::DataStorage* const storage, VoidWrapper& value )
+void dataStorageCopyToArray( Engine::DataStorage* const storage, void* value )
 {
-	storage->toArray( value.value );
+	storage->toArray( value);
 }
 
-void dataStorageCopyFromArray( Engine::DataStorage* const storage, VoidWrapper& value )
+void dataStorageCopyFromArray( Engine::DataStorage* const storage, void* value )
 {
-	storage->fromArray( value.value );
+	storage->fromArray( value );
 }
 
 Texture dataStorageToTexture( Engine::DataStorage* const storage )
 {
 	Texture texture;
-	texture.location = boost::any_cast<GLuint>(storage->getDataStorage());
+	texture.location = storage->getDataStorage();
 	Engine::DataStorage::Info info = storage->getInfo();
 	texture.w = info.width;
 	texture.h = info.height;
@@ -138,9 +132,7 @@ void programSetLocationMemoryString( Program* const program, const std::string& 
 
 Engine::DataStorage::Ptr loadImage( Engine* engine, const std::string& path )
 {
-	SDL_Surface* bitmap = IMG_Load( path.c_str() );
-	SDL_Surface* surface = SDL_DisplayFormatAlpha( bitmap );
-	SDL_FreeSurface( bitmap );
+	SDL_Surface* surface = IMG_Load( path.c_str() );
 	
 	Engine::DataStorage::Info info;
 	
@@ -174,34 +166,23 @@ Engine* pluginToEngine( Plugin* const plugin )
 	return (Engine*) plugin;
 }
 
-int luaPrint( lua_State* L )
+sol::object ptreeChildren( sol::object obj )
 {
-	std::string name = luabind::object_cast<InfractusProgram*>(luabind::globals(L)["self"])->getName();
-	//Singleton<Infractus>::instance().printToConsole( name + ": " + std::string(lua_tostring(L, -1)) );
-	lua_pop(L, 1);
-	return 0;
-}
-
-luabind::object ptreeChildren( const luabind::object& obj)
-{
-	ptree tree = luabind::object_cast<ptree>(obj);
-
-	lua_State* L = obj.interpreter();	
+	lua_State* L = obj.lua_state();	
 	try
 	{
-		ptree tree = luabind::object_cast<ptree>(obj);
-
-		luabind::object children = luabind::newtable(L);
+		ptree tree = obj.as<ptree>();
+		sol::table children = sol::state_view(L).create_table();
 		
 		int pos = 1;
-		BOOST_FOREACH( ptree::value_type child, tree )
-			children[pos++] = child;
+		for( auto child: tree)
+			children[pos++] = child.second;
 		
 		return children;
 	}
 	catch(...)
 	{
-		return luabind::object();
+		return sol::nil;
 	}
 }
 

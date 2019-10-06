@@ -108,14 +108,19 @@ void GraphicsSystem::init()
 		screenInfo.f = false;
 	}
 
-	int sdl_flags = SDL_OPENGL;
-	if( screenInfo.f ) sdl_flags |= SDL_FULLSCREEN;
+	int sdl_flags = SDL_WINDOW_OPENGL;
+	if( screenInfo.f ) sdl_flags |= SDL_WINDOW_FULLSCREEN;
 
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
-   // SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 	
-	if( !SDL_SetVideoMode( screenInfo.w, screenInfo.h, screenInfo.d, sdl_flags ) )
+	window = SDL_CreateWindow("infractus", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenInfo.w, screenInfo.h, sdl_flags);
+	SDL_GL_CreateContext(window);
+	//renderer = SDL_CreateRenderer(window, -1, 0);
+
+	if( !window )
 	{
 		Singleton<LoggingSystem>::instance().writeLogf( LoggingSystem::Critical, "Cannot set screen to %ix%ix%i %s: %s", screenInfo.w,
 			screenInfo.h, screenInfo.d, (screenInfo.f)? "fullscreen":"windowed", SDL_GetError() );
@@ -278,9 +283,7 @@ void GraphicsSystem::resetView()
 
 Texture GraphicsSystem::loadTexture( const std::string& filename )
 {
-	SDL_Surface* bitmap = IMG_Load( filename.c_str() );
-	SDL_Surface* surface = SDL_DisplayFormatAlpha( bitmap );
-	SDL_FreeSurface( bitmap );
+	SDL_Surface* surface = IMG_Load( filename.c_str() );
 
 	Texture texture;
 	texture.w = surface->w;
@@ -536,8 +539,8 @@ void GraphicsSystem::drawPoint( Point pos )
 
 void GraphicsSystem::setWindowTitle( const std::string& title )
 {
-	if( !screenInfo.f )
-		SDL_WM_SetCaption(title.c_str(), NULL );
+	//if( !screenInfo.f )
+	//	SDL_WM_SetCaption(title.c_str(), NULL );
 }
 
 void GraphicsSystem::drawSurface( SDL_Surface* texture, Point pos, bool center, float scale )
@@ -547,13 +550,14 @@ void GraphicsSystem::drawSurface( SDL_Surface* texture, Point pos, bool center, 
 	
 	SDL_Surface* temp;
 
-	if( texture->flags & SDL_SRCCOLORKEY )
-	{
-		temp = requestBufferSurface( texture->w, texture->h );
-		SDL_FillRect( temp, NULL, SDL_MapRGBA( temp->format, 0, 0, 0, 0 ));
-		SDL_BlitSurface( texture, NULL, temp, NULL );
-	} else temp = texture;
-	
+	//if( texture->flags & SDL_SRCCOLORKEY )
+	//{
+	//	temp = requestBufferSurface( texture->w, texture->h );
+	//	SDL_FillRect( temp, NULL, SDL_MapRGBA( temp->format, 0, 0, 0, 0 ));
+	//	SDL_BlitSurface( texture, NULL, temp, NULL );
+	//} else temp = texture;
+	temp = texture;
+
 	glBindTexture( GL_TEXTURE_2D, backTex );
 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -602,8 +606,8 @@ void GraphicsSystem::drawSurface( SDL_Surface* texture, Point pos, bool center, 
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	
-	if( texture->flags & SDL_SRCCOLORKEY )
-		SDL_FreeSurface(temp);
+	//if( texture->flags & SDL_SRCCOLORKEY )
+	//	SDL_FreeSurface(temp);
 }
 
 void GraphicsSystem::render()
@@ -616,7 +620,7 @@ void GraphicsSystem::render()
 	}
 
 	resetDrawColor();
-	SDL_GL_SwapBuffers();
+	SDL_GL_SwapWindow(window);
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glLoadIdentity();
 	
@@ -636,8 +640,8 @@ SDL_Surface* GraphicsSystem::requestBufferSurface(int w, int h)
 		return SDL_CreateRGBSurface(SDL_HWSURFACE, w, h, screenInfo.d, 0xff000000, 
 			0x00ff0000, 0x0000ff00, 0x000000ff);
 	#else
-		return SDL_CreateRGBSurface(SDL_HWSURFACE, w, h, screenInfo.d, 0x000000ff, 
-			0x0000ff00, 0x00ff0000, 0xff000000);
+		return 0; //SDL_CreateRGBSurface(SDL_HWSURFACE, w, h, screenInfo.d, 0x000000ff, 
+			//0x0000ff00, 0x00ff0000, 0xff000000);
 	#endif
 }
 

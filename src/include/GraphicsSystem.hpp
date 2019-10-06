@@ -1,7 +1,7 @@
 #include <GL/glew.h>
-#include <SDL.h>
-#include <SDL_image.h>
-
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_opengl.h>
 /// A small struct that refers to a (x,y,z) point in space.
 struct Point
 {
@@ -348,6 +348,9 @@ private:
 	
 	std::map<Point, GLuint> pointArrayCache;
 	std::map<BlendingMode, std::pair<GLuint, GLuint> > blendingMap;
+
+	SDL_Window* window;
+	SDL_Renderer* renderer;
 
 	GLuint backTex;
 };

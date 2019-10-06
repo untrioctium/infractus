@@ -38,7 +38,6 @@ std::vector<fs::path> FileSystem::findAll( const fs::path& dir, const std::strin
 		else if( iter->path().filename() == filename )
 		{
 			paths.push_back( iter->path() );
-			printf(iter->path().string().c_str());
 		}
 	}
 	

@@ -17,7 +17,7 @@ namespace libcompute
 {
 
 /** Base class for all dynamically loaded plugins. */
-class __attribute__ ((dllexport)) Plugin
+class DLLEXPORT Plugin
 {
 public:
 
@@ -54,6 +54,8 @@ public:
 	 */ 
 	std::string readFile( const std::string& filePath, bool fullPath = false ) const;
 
+	virtual ~Plugin() {};
+
 private:
 
 	std::string pluginName_;
@@ -67,7 +69,7 @@ private:
 typedef Plugin* (*plugin_init_func)(void);
 
 /** Class that manages loading plugins */
-class __attribute__ ((dllexport)) PluginManager
+class DLLEXPORT PluginManager
 {
 public:
 	/** Constructor that sets the plugin search path to be the application's root */
@@ -109,8 +111,7 @@ public:
 	 * @return A pointer to the loaded plugin.
 	 * @throw SharedLibraryException The plugin could not be loaded.
 	 */
-	Plugin* loadPlugin(const std::string& name)
-		throw (SharedLibraryException);
+	Plugin* loadPlugin(const std::string& name);
 
 private:
 

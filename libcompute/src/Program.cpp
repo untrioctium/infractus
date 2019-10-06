@@ -48,11 +48,11 @@ void Program::load( const std::string& path )
 		boost::property_tree::ptree config;
 		read_xml( fullPath, config );
 
-		BOOST_FOREACH( boost::property_tree::ptree::value_type &v, config.get_child( "program.engines" ))
+		for( auto &v: config.get_child( "program.engines" ))
 		{
 			boost::property_tree::ptree engine = v.second;
 
-			supportedEngines_[engine.get<std::string>("name")] = std::pair<ProgramLocation, boost::any>( File, engine.get<std::string>("file") );
+			supportedEngines_[engine.get<std::string>("name")] = std::pair<ProgramLocation, std::any>( File, engine.get<std::string>("file") );
 		}	
 
 		storageDataTypes_[Input].type = Engine::DataStorage::typeFromName(config.get<std::string>( "program.input.type" ));
@@ -70,7 +70,7 @@ void Program::load( const std::string& path )
 		for( unsigned int i = 0; i < storageCount_[Output]; i++ )
 			storage_[Output][i] = NULL;
 			
-		BOOST_FOREACH( boost::property_tree::ptree::value_type &v, config.get_child( "program.input.parameters" ) )
+		for( auto &v: config.get_child( "program.input.parameters" ) )
 		{
 			boost::property_tree::ptree parameter = v.second;
 			std::string paramName = parameter.get<std::string>("<xmlattr>.name");
@@ -79,39 +79,24 @@ void Program::load( const std::string& path )
 		}
 
 	}
-	catch( boost::exception& e )
-	{
-		printf("%s\n", boost::diagnostic_information(e).c_str());
-	}
 	catch ( std::exception e )
 	{
 		printf("f-- %s\n", e.what());
 	}
 }
 
-Parameter& Program::getParameter( const std::string& name ) throw(UnknownParameterException)
+Parameter& Program::getParameter( const std::string& name )
 {
-	if( parameters_.count(name) == 0 )
-		BOOST_THROW_EXCEPTION( UnknownParameterException() 
-			<< UnknownParameterException::ParameterName(name) );
 	return parameters_[name];
 }
 
 void Program::addParameter( const std::string& name, Parameter::ParameterType type ) 
-	throw (EngineCurrentlyBoundException, MalformedParameterNameException, ParameterAlreadyExistsException)
 {
-	if( parameterExists( name ) )
-		BOOST_THROW_EXCEPTION( ParameterAlreadyExistsException() << ParameterException::ParameterName(name) );
-
 	parameters_[name] = Parameter(name, type, 1);
 }
 
 void Program::addParameterArray( const std::string& name, Parameter::ParameterType type, unsigned int size )
-	throw( EngineCurrentlyBoundException, MalformedParameterNameException, InvalidSizeException, ParameterAlreadyExistsException )
 {
-	if( parameterExists( name ) )
-		BOOST_THROW_EXCEPTION( ParameterAlreadyExistsException() << ParameterException::ParameterName(name) );
-
 	parameters_[name] = Parameter(name, type, size);
 }
 
@@ -125,18 +110,17 @@ std::vector<std::string> Program::getParameterNames()
 	return retVal;
 }
 
-void* Program::getActiveProgram() throw( NoEngineBoundException )
+void* Program::getActiveProgram()
 {
 	return this->activeProgram_;
 }
 
-void Program::run() throw (NoEngineBoundException)
+void Program::run()
 {
 	boundEngine_->runProgram(this);
 }
 
 void Program::allocateStorage( unsigned int width, unsigned int height, StorageLocation location, unsigned int index )
-	throw (NoEngineBoundException, InvalidSizeException)
 {
 	if( this->storage_[location][index] != NULL )
 		delete this->storage_[location][index];
@@ -146,11 +130,7 @@ void Program::allocateStorage( unsigned int width, unsigned int height, StorageL
 }
 
 Program::ProgramLocation Program::getProgramLocationType( const std::string& engine ) const
-	throw (EngineNotSupportedException)
 {
-	if( !engineSupported(engine) )
-		BOOST_THROW_EXCEPTION( libcomputeException() );
-
 	return supportedEngines_.find(engine)->second.first;
 }
 
@@ -160,24 +140,22 @@ void Program::setProgramLocationFile( const std::string& engine, const std::stri
 	supportedEngines_[engine].second = path;
 }
 
-void Program::setProgramLocationMemory( const std::string& engine, boost::any location )
+void Program::setProgramLocationMemory( const std::string& engine, std::any location )
 {
 	supportedEngines_[engine].first = Memory;
 	supportedEngines_[engine].second = location;
 }
 
 std::string Program::getProgramLocationFile( const std::string& engine )
-	throw (ProgramLocationTypeMismatchException, EngineNotSupportedException)
 {
-	return workingDirectory_ + boost::any_cast<std::string>( supportedEngines_[engine].second );
+	return workingDirectory_ + std::any_cast<std::string>( supportedEngines_[engine].second );
 }
-boost::any Program::getProgramLocationMemory( const std::string& engine )
-	throw (ProgramLocationTypeMismatchException, EngineNotSupportedException)
+std::any Program::getProgramLocationMemory( const std::string& engine )
 {
 	return supportedEngines_[engine].second;
 }
 
-Engine::DataStorage::Ptr Program::getStorage( StorageLocation location, unsigned int index ) throw (NoStorageAllocatedException)
+Engine::DataStorage::Ptr Program::getStorage( StorageLocation location, unsigned int index )
 {
 	if( location == Input )
 		return *(storage_[0][index]);
@@ -200,7 +178,7 @@ void Program::swapInputOutput( unsigned int index )
 	storage_[1][index] = temp;
 }
 
-void Program::bindEngine( Engine* engine ) throw (EngineCurrentlyBoundException)
+void Program::bindEngine( Engine* engine )
 {
 	boundEngine_ = engine;
 	this->activeProgram_ = engine->bindProgram( this );

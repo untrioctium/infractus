@@ -1,10 +1,10 @@
 <infractus>
 	<graphics>
-		<width>2560</width>
-		<height>1440</height>
+		<width>1920</width>
+		<height>1080</height>
 		<depth>32</depth>
 		<buffer_depth>32</buffer_depth>
-		<fullscreen>1</fullscreen>
+		<fullscreen>0</fullscreen>
 		<console_height>240</console_height>
 	</graphics>
 </infractus>

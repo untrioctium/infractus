@@ -36,18 +36,14 @@ void* Parameter::allocateStorage( Parameter::ParameterType type, unsigned int si
 	return malloc( sizeTable_[type] * size );		
 }
 
-Parameter::ParameterType Parameter::typeFromName( const std::string& name ) throw(UnknownTypeException)
+Parameter::ParameterType Parameter::typeFromName( const std::string& name )
 {
-	if( parameterTypeTable_.left.find( name ) == parameterTypeTable_.left.end() )
-		BOOST_THROW_EXCEPTION(UnknownTypeException() << UnknownTypeException::TypeName(name));
-	else return parameterTypeTable_.left.at(name);
+	return parameterTypeTable_.left.at(name);
 }
 
-std::string Parameter::nameFromType( ParameterType type ) throw(UnknownTypeException)
+std::string Parameter::nameFromType( ParameterType type ) 
 {
-	if( parameterTypeTable_.right.find( type ) == parameterTypeTable_.right.end() )
-		BOOST_THROW_EXCEPTION(UnknownTypeException());
-	else return parameterTypeTable_.right.at(type);		
+	return parameterTypeTable_.right.at(type);		
 }
 
 Parameter::Parameter()
@@ -112,54 +108,39 @@ void Parameter::operator=( const Parameter& other )
 	}
 }
 
-Parameter Parameter::operator[]( unsigned int index ) throw( IndexOutOfRangeException )
+Parameter Parameter::operator[]( unsigned int index )
 {
-	if( index >= size_ ) 
-		BOOST_THROW_EXCEPTION(IndexOutOfRangeException() << 
-				IndexOutOfRangeException::RequestedIndex(index) <<
-				IndexOutOfRangeException::ArraySize(size_) << 
-				ParameterException::ParameterName(name()));
 	Parameter childParameter;
 	childParameter.size_ = 1;
 	childParameter.type_ = type_;
 	childParameter.value_ = (void*)((char*)value_ + index * sizeTable_[type_]);
 	childParameter.isArrayChild_ = true;
-	childParameter.name_ = name_ + "[" + boost::lexical_cast<std::string>( index ) + "]";
+	childParameter.name_ = name_ + "[" + std::to_string( index ) + "]";
 	return childParameter;
 }
 
-Parameter::operator int() throw(InvalidParameterCastException)
+Parameter::operator int()
 {
 	if( type_ == Int )
 		return ((int*) value_)[0];
 	else if( type_ == Float )
 		return (int)((float*) value_)[0];
-	else BOOST_THROW_EXCEPTION(InvalidParameterCastException() << 
-			InvalidParameterCastException::FromType("int") << 
-			InvalidParameterCastException::ToType(nameFromType(type_)) <<
-			ParameterException::ParameterName(name_));
+	else return 0;
 }
 
-Parameter::operator float() throw(InvalidParameterCastException)
+Parameter::operator float()
 {
 	if( type_ == Float )
 		return ((float*) value_)[0];
 	else if( type_ == Int )
 		return (float)((int*) value_)[0];
-	else BOOST_THROW_EXCEPTION(InvalidParameterCastException() << 
-			InvalidParameterCastException::FromType("float") << 
-			InvalidParameterCastException::ToType(nameFromType(type_)) <<
-			ParameterException::ParameterName(name_));
+	else return 0;
 }
 
 #define PARAMETER_VALUE_CAST( T, N ) \
-	Parameter::operator T&() throw(InvalidParameterCastException)\
+	Parameter::operator T&()\
 	{\
-		if( type_ == N ) return ((T*) value_)[0];\
-		else BOOST_THROW_EXCEPTION(InvalidParameterCastException() << \
-			InvalidParameterCastException::FromType(#T) << \
-			InvalidParameterCastException::ToType(nameFromType(type_)) << \
-			ParameterException::ParameterName(name_));\
+		return ((T*) value_)[0];\
 	}
 
 PARAMETER_VALUE_CAST( vec2, Vec2 )
@@ -169,13 +150,9 @@ PARAMETER_VALUE_CAST( mat3, Mat3 )
 PARAMETER_VALUE_CAST( mat4, Mat4 )
 
 #define PARAMETER_POINTER_CAST( T, N ) \
-	Parameter::operator T*() throw(InvalidParameterCastException)\
+	Parameter::operator T*()\
 	{\
-		if( type_ == N ) return (T*) value_;\
-		else BOOST_THROW_EXCEPTION(InvalidParameterCastException() << \
-			InvalidParameterCastException::FromType(#T) << \
-			InvalidParameterCastException::ToType(nameFromType(type_)) << \
-			ParameterException::ParameterName(name_));\
+		return (T*) value_;\
 	}
 
 PARAMETER_POINTER_CAST( int, Int )
@@ -187,13 +164,9 @@ PARAMETER_POINTER_CAST( mat3, Mat3 )
 PARAMETER_POINTER_CAST( mat4, Mat4 )
 
 #define PARAMETER_VALUE_SET( T, N ) \
-	void Parameter::operator=( const T& value ) throw(InvalidParameterCastException)\
+	void Parameter::operator=( const T& value )\
 	{\
-		if( type_ == N ) ((T*) value_)[0] = value;\
-		else BOOST_THROW_EXCEPTION(InvalidParameterCastException() << \
-			InvalidParameterCastException::FromType(#T) << \
-			InvalidParameterCastException::ToType(nameFromType(type_)) << \
-			ParameterException::ParameterName(name_));\
+		((T*) value_)[0] = value;\
 	}
 
 PARAMETER_VALUE_SET( int, Int )

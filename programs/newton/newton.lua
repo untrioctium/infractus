@@ -1,12 +1,8 @@
-assert(loadfile("scripts/expression.lua"))()
-class 'Newton' (InfractusProgram)
-class 'NewtonFunction'
-
-function NewtonFunction:__init()
-end
+NewtonFunction = {}
+Newton = {}
 
 function NewtonFunction.random( xMin, xMax, yMin, yMax, pMin, pMax )
-	local func = NewtonFunction()
+	local func = {}
 	
 	func.roots = {}
 	func.rootCount = math.random(2, 8)
@@ -29,11 +25,6 @@ function NewtonFunction.random( xMin, xMax, yMin, yMax, pMin, pMax )
 	end
 	
 	return func
-end
-							
-
-function Newton:__init()
-	InfractusProgram.__init(self)
 end
 
 function Newton:updateTransform( func, unbind )
@@ -280,7 +271,4 @@ function Newton:draw()
 	--draw_status( unpack(statusTable) )
 end
 
-function getProgram()
-	self = Newton()
-	return self
-end
+return Newton

@@ -1,111 +1,76 @@
-#define LIP_VOID_FUNCTION(name) \
-	void name() throw(InfractusProgramException)\
-	{\
-		try\
-		{\
-			call<void>(#name);\
-		}\
-		catch( luabind::error& e )\
-		{\
-			extractErrorAndThrow();\
-		}\
-	}\
-	static void default_##name( InfractusProgram* ptr )\
-	{\
-		ptr->InfractusProgram::name();\
-	}\
-
-struct LuaInfractusProgram: InfractusProgram, luabind::wrap_base
+struct LuaInfractusProgram: InfractusProgram
 {
 
 	LuaInfractusProgram() : InfractusProgram() {}
 
-	~LuaInfractusProgram() { lua_close(L); }
+	~LuaInfractusProgram() { delete state; }
 	
-	void init(  bool usingTextureSource, unsigned int width, unsigned int height ) throw(InfractusProgramException)
+	void init(  bool usingTextureSource, unsigned int width, unsigned int height )
 	{
-		try
-		{
-			call<void>("init", usingTextureSource, width, height);
-		}
-		catch( luabind::error& e )
-		{
-			extractErrorAndThrow();
-		}
-		catch( libcompute::libcomputeException& e )
-		{
-			BOOST_THROW_EXCEPTION( InfractusProgramException() << 
-			InfractusProgramException::errorString(boost::diagnostic_information(e)));
+		sol::protected_function f = def["init"];
+		auto result = f(def, usingTextureSource, width, height);
+		if(!result.valid()) {
+			sol::error err = result;
+			std::cout << err.what() << std::endl;
+			throw err;
 		}
 	}
 	
-	static void default_init( InfractusProgram* ptr, bool usingTextureSource, unsigned int width, unsigned int height ) 
+	void run( int dt, float scale )
 	{
-		ptr->InfractusProgram::init(usingTextureSource, width, height);
-	}
-	
-	Texture getOutput() throw(InfractusProgramException)
-	{
-		try
-		{
-			return call<Texture>("getOutput");
-		}
-		catch( luabind::error& e )
-		{
-			extractErrorAndThrow();
-		}
-		return Texture();
-	}
-	
-	static Texture default_getOutput( InfractusProgram* ptr )
-	{
-		return ptr->InfractusProgram::getOutput();
-	}
-	
-	void run( int dt, float scale ) throw(InfractusProgramException)
-	{
-		try
-		{
-			call<void>("run", dt, scale);
-		}
-		catch( luabind::error& e )
-		{
-			extractErrorAndThrow();
+		sol::protected_function f = def["run"];
+		auto result = f(def, dt, scale);
+		if(!result.valid()) {
+			sol::error err = result;
+			std::cout << err.what() << std::endl;
+			std::terminate();
 		}
 	}
 	
-	void setUsedTexture( Texture texture ) throw(InfractusProgramException)
-	{	
-		try
-		{
-			call<void>("setUsedTexture", texture);
-		}
-		catch( luabind::error& e )
-		{
-			extractErrorAndThrow();
+	void input() { 
+		sol::protected_function f = def["input"];
+		auto result = f(def);
+		if(!result.valid()) {
+			sol::error err = result;
+			std::cout << err.what() << std::endl;
+			std::terminate();
 		}
 	}
-	
-	static void default_setUsedTexture( InfractusProgram* ptr, Texture texture )
-	{
-		ptr->InfractusProgram::setUsedTexture(texture);
+	void draw() { 
+		sol::protected_function f = def["draw"];
+		auto result = f(def);
+		if(!result.valid()) {
+			sol::error err = result;
+			std::cout << err.what() << std::endl;
+			std::terminate();
+		}
+	}
+
+	Texture getOutput() {
+		if( def["getOutput"].valid()) {
+			sol::protected_function f = def["getOutput"];
+			auto result = f(def);
+			if(!result.valid()) {
+				sol::error err = result;
+				std::cout << err.what() << std::endl;
+				std::terminate();
+			}
+			return result.get<Texture>();
+		} else return InfractusProgram::getOutput();
 	}
 	
-	static void default_run( InfractusProgram* ptr, int dt, float scale )
+	void setLuaState( sol::state* nstate, sol::table ndef ) { state = nstate; def = ndef; }
+	
+	std::string executeCommand( const std::string& command )
 	{
-		ptr->InfractusProgram::run(dt, scale);
-	}
-	
-	LIP_VOID_FUNCTION(input)
-	LIP_VOID_FUNCTION(draw)
-	
-	void setLuaState( lua_State* state ) { L = state; }
-	
-	std::string executeCommand( const std::string& command ) throw(InfractusProgramException)
-	{
-		if( luaL_dostring( L, command.c_str() ) == 1 )
-			extractErrorAndThrow();
-			
+		lua_State* L = state->lua_state();
+
+		if( luaL_dostring( L, command.c_str() ) == 1 ) {
+			std::string error = lua_tostring(L,-1);
+			lua_pop(L,1);
+			std::cout << error << std::endl;
+		}
+
 		if( lua_isstring( L, -1 ) )
 		{
 			std::string result = lua_tostring( L, -1 );
@@ -118,15 +83,8 @@ struct LuaInfractusProgram: InfractusProgram, luabind::wrap_base
 	
 private:
 
-	void extractErrorAndThrow() throw(InfractusProgramException)
-	{
-		std::string error = lua_tostring(L,-1);
-		lua_pop(L,1);
-		BOOST_THROW_EXCEPTION( InfractusProgramException() << 
-			InfractusProgramException::errorString(error));
-	}
-
-	lua_State* L;
+	sol::table def;
+	sol::state* state;
 };
 	
 	

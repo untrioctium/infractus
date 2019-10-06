@@ -1,8 +1,8 @@
 #ifndef LIBCOMPUTE_ENGINE_HPP
 #define LIBCOMPUTE_ENGINE_HPP
 
-#include <boost/shared_ptr.hpp>
-#include <boost/any.hpp>
+#include <any>
+#include <memory>
 
 namespace libcompute
 {
@@ -28,7 +28,7 @@ public:
 	{
 	public:
 		/** Reference counting shared_ptr for this class. */
-		typedef boost::shared_ptr<DataStorage> Ptr;
+		typedef std::shared_ptr<DataStorage> Ptr;
 
 		/** All possible types for data */
 		enum DataType
@@ -48,10 +48,8 @@ public:
 		 * @return The represented DataType.
 		 * @throw UnknownTypeException A DataType matching \a name could not be found
 		 */
-		static DataType typeFromName( const std::string& name ) throw( UnknownTypeException )
+		static DataType typeFromName( const std::string& name )
 		{
-			if( dataTypeNameTable_.count(name) == 0 )
-				BOOST_THROW_EXCEPTION( UnknownTypeException() << UnknownTypeException::TypeName(name) );
 			return dataTypeNameTable_[name];
 		}
 
@@ -86,10 +84,8 @@ public:
 		 * regular user will copy data back and forth using the toArray() and
 		 * fromArray() methods.
 		 */
-		boost::any getDataStorage() const throw( UninitializedDataRequestedException )
+		unsigned int getDataStorage()
 		{
-			if( dataStorage_.empty() )
-				BOOST_THROW_EXCEPTION( UninitializedDataRequestedException() );
 			return dataStorage_;
 		}
 
@@ -106,10 +102,8 @@ public:
 		 * The data storage location can only be set once; attempting to set it again
 		 * will result in a DataDoubleSetException.
 		 */
-		void setDataStorage(boost::any storage) throw( DataDoubleSetException )
-		{
-			if( !dataStorage_.empty() )
-				BOOST_THROW_EXCEPTION( DataDoubleSetException() );
+		void setDataStorage(unsigned int storage)
+		{;
 			dataStorage_ = storage;
 		}
 
@@ -120,9 +114,7 @@ public:
 		 *                                           it was set.
 		 */
 		const Info& getInfo() const
-		{
-			if( !infoSet_ )
-				BOOST_THROW_EXCEPTION( UninitializedDataRequestedException() );
+		{;
 			return info_;
 		}
 
@@ -134,8 +126,6 @@ public:
 		 */
 		void setInfo( const Info& info )
 		{
-			if( infoSet_ )
-				BOOST_THROW_EXCEPTION( DataDoubleSetException() );
 			info_ = info;
 			infoSet_ = true;
 		}
@@ -167,7 +157,7 @@ public:
 	private:
 
 		friend class Information;
-		boost::any dataStorage_;
+		unsigned int dataStorage_;
 		Info info_;
 		bool infoSet_;
 
@@ -198,7 +188,9 @@ public:
 	virtual void unbindProgram( Program* const) = 0;
 
 	virtual void runProgram( Program* const) = 0;
-	
+	virtual ~Engine() {};
+
+
 	enum ReductionType
 	{
 		Minimum,

@@ -36,7 +36,6 @@ PluginManager::~PluginManager()
 }
 
 Plugin* PluginManager::loadPlugin(const std::string& name)
-	throw (SharedLibraryException)
 {
 	if (pluginMap_.count(name) > 0)
 		return (pluginMap_[name])->plugin;
@@ -50,7 +49,6 @@ Plugin* PluginManager::loadPlugin(const std::string& name)
 	if (!pi->plugin)
 	{
 		delete pi;
-		throw SharedLibraryException("plugin_init error");
 	}
 	pluginMap_[name]=pi;
 	return (pi->plugin);

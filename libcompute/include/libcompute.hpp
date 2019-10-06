@@ -2,7 +2,6 @@
 #include <vector>
 #include <map>
 
-#include <libcompute/Exceptions.hpp>
 #include <libcompute/SharedLibrary.hpp>
 #include <libcompute/Plugin.hpp>
 #include <libcompute/ProgramDataTypes.hpp>

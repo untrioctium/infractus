@@ -1,10 +1,6 @@
 assert(loadfile("scripts/drawStatus.lua"))()
 
-class 'Escape' (InfractusProgram)
-
-function Escape:__init()
-	InfractusProgram.__init(self)
-end
+Escape = {}
 
 function Escape:loadAllEscapes()
 	self.escapes = {}
@@ -19,17 +15,17 @@ function Escape:loadAllEscapes()
 		local dims = {"x", "y"}
 		
 		for k,f in pairs(dims) do
-			escape[f] = v.second:get(f)
+			escape[f] = v:get(f)
 		end
 		
-		escape.name = v.second:get("<xmlattr>.name")
-		escape.radius = tonumber(v.second:get("<xmlattr>.radius"))
-		escape.maxIterations = tonumber(v.second:get("<xmlattr>.max"))
+		escape.name = v:get("<xmlattr>.name")
+		escape.radius = tonumber(v:get("<xmlattr>.radius"))
+		escape.maxIterations = tonumber(v:get("<xmlattr>.max"))
 		
 		escape.parameters = {}
 		
-		for i,p in pairs(v.second:getChild("parameters"):children()) do
-			local info = p.second:getChild("<xmlattr>")
+		for i,p in pairs(v:getChild("parameters"):children()) do
+			local info = p:getChild("<xmlattr>")
 			local parameter = {}
 			parameter.name = info:get("name")
 			parameter.index = i-1
@@ -161,6 +157,8 @@ function Escape:init( usingTextureSource, width, height )
 	
 	self:setBufferTexture(GraphicsSystem.instance():createBufferTexture(0,0))
 	
+	io.write(Program.output)
+
 	self.transform:allocateStorage( screenInfo.w, screenInfo.h, Program.output, 0 )
 	self.calc:allocateStorage( screenInfo.w, screenInfo.h, Program.output, 0 )
 	self.color:allocateStorage( screenInfo.w, screenInfo.h, Program.output, 0 )
@@ -289,7 +287,4 @@ function Escape:draw()
 	--end
 end
 
-function getProgram()
-	self = Escape()
-	return self
-end
+return Escape

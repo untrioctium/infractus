@@ -17,8 +17,7 @@ private:
 class SharedLibrary
 {
 public:
-	static SharedLibrary* openSharedLibrary(const std::string& name)
-		throw (SharedLibraryException);
+	static SharedLibrary* openSharedLibrary(const std::string& name);
 
 	virtual ~SharedLibrary() {}
 	

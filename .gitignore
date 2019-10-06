@@ -30,3 +30,7 @@
 *.exe 
 *.out 
 *.app 
+
+infractus
+infractus.log.xml
+.vscode
